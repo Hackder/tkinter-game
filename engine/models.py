@@ -1,3 +1,4 @@
+from __future__ import annotations
 import copy
 
 class FrameContext:
@@ -24,16 +25,25 @@ class Size:
     def copy(self):
         return copy.copy(self)
 
+    def max(self, other: Size):
+        return Size(
+                width=max(self.width, other.width) if self.width is not None and other.width is not None else None,
+                height=max(self.height, other.height) if self.height is not None and other.height is not None else None
+                )
+
     def __repr__(self):
         return f"Size(width={self.width}, height={self.height})"
 
-class DefinedSize():
+class DefinedSize(Size):
     def __init__(self, *, width: float, height: float):
         self.width = width
         self.height = height
 
     def copy(self):
         return copy.copy(self)
+
+    def max(self, other: DefinedSize):
+        return DefinedSize(width=max(self.width, other.width), height=max(self.height, other.height))
 
     def __repr__(self):
         return f"DefinedSize(width={self.width}, height={self.height})"
@@ -46,8 +56,20 @@ class Position:
     def copy(self):
         return copy.copy(self)
 
-    def add(self, other):
+    def add(self, other: Position):
         return Position(x=self.x + other.x, y=self.y + other.y)
+
+    def sub(self, other: Position):
+        return Position(x=self.x - other.x, y=self.y - other.y)
+
+    def distance(self, other: Position):
+        return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
+
+    def lerp(self, other: Position, progress: float):
+        return Position(x=self.x + (other.x - self.x) * progress, y=self.y + (other.y - self.y) * progress)
+
+    def __eq__(self, other: Position):
+        return self.x == other.x and self.y == other.y
 
     def __repr__(self):
         return f"Position(x={self.x}, y={self.y})"
@@ -56,17 +78,13 @@ class Constraints:
     def __init__(self, *,
                  min_width: float,
                  min_height: float,
-                 max_width: float|None = None,
-                 max_height: float|None = None
+                 max_width: float,
+                 max_height: float
                  ):
         self.min_width = min_width
         self.min_height = min_height
         self.max_width = max_width
         self.max_height = max_height
-
-    @staticmethod
-    def unbounded():
-        return Constraints(min_width=0, min_height=0, max_width=None, max_height=None)
 
     def copy(self):
         return copy.copy(self)
@@ -108,6 +126,14 @@ class Constraints:
 
     def is_unbounded(self):
         return self.max_width is None or self.max_height is None
+
+    def with_min(self, min_width: float, min_height: float):
+        return Constraints(min_width=min_width, min_height=min_height, max_width=self.max_width, max_height=self.max_height)
+
+    def limit(self, size: Size) -> Constraints:
+        max_w = size.width if size.width is not None else self.max_width
+        max_h = size.height if size.height is not None else self.max_height
+        return Constraints(min_width=self.min_width, min_height=self.min_height, max_width=max_w, max_height=max_h)
 
     def __repr__(self):
         return f"Constraints(min_width={self.min_width}, min_height={self.min_height}, max_width={self.max_width}, max_height={self.max_height})"

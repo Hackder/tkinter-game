@@ -23,11 +23,11 @@ class ScreenSizeLayout(Entity):
         self.child.paint(ctx, position)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> DefinedSize:
-        constraints = Constraints(min_width=0, min_height=0, max_width=ctx.width, max_height=ctx.height)
+        constraints = Constraints(min_width=ctx.width, min_height=ctx.height, max_width=ctx.width, max_height=ctx.height)
 
         self.child._size = self.child.layout(ctx, constraints)
 
-        return self.child._size
+        return DefinedSize(width=ctx.width, height=ctx.height)
 
 class PaddingSize:
     def __init__(self, top: float, right: float, bottom: float, left: float):
@@ -67,16 +67,18 @@ class Padding(Entity):
         self.child.construct(canvas)
 
     def paint(self, ctx: FrameContext, position: Position):
-        for effect in self.effects:
-            effect.process(ctx, position, self._size, self._state)
+        pos = position.add(self.position)
 
-        child_position = Position(x=position.x + self._state.padding.left, y=position.y + self._state.padding.top)
+        for effect in self.effects:
+            effect.process(self, ctx, pos, self._size, self._state)
+
+        child_position = Position(x=pos.x + self._state.padding.left, y=pos.y + self._state.padding.top)
         self.child.paint(ctx, child_position)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> DefinedSize:
         state = self.state.copy()
         for effect in self.layout_effects:
-            effect.process(ctx, state)
+            effect.process(self,ctx, state)
         self._state = state
 
         c = constraints.copy()
@@ -91,9 +93,10 @@ class Padding(Entity):
         c.min_height -= y_padding
         c.max_height -= y_padding
 
-        self.child._size = self.child.layout(ctx, c)
+        child_size = self.child.layout(ctx, c)
+        self.child._size = child_size
 
-        return constraints.to_max_defined_size()
+        return DefinedSize(width=child_size.width + x_padding, height=child_size.height + y_padding)
 
 class Center(Entity):
     def __init__(self, *,
@@ -110,16 +113,151 @@ class Center(Entity):
         self.child.construct(canvas)
 
     def paint(self, ctx: FrameContext, position: Position):
-        for effect in self.effects:
-            effect.process(ctx, position, self._size, None)
+        pos = self.position.add(position)
 
-        child_position = Position(x=position.x + (self._size.width - self.child._size.width) / 2,
-                                  y=position.y + (self._size.height - self.child._size.height) / 2)
-        
+        for effect in self.effects:
+            effect.process(self, ctx, pos, self._size, None)
+
+        child_position = Position(x=pos.x + (self._size.width - self.child._size.width) / 2,
+                                  y=pos.y + (self._size.height - self.child._size.height) / 2)
+
         self.child.paint(ctx, child_position)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> DefinedSize:
-        self.child._size = self.child.layout(ctx, constraints)
+        self.child._size = self.child.layout(ctx, constraints.with_min(0, 0))
 
         return constraints.to_max_defined_size()
+
+class Stack(Entity):
+    def __init__(self, *,
+                 tag: str|None = None,
+                 position: Position = Position(x=0, y=0),
+                 effects: list[Effect] = [],
+                 layout_effects: list[LayoutEffect] = [],
+                 children: list[Entity] = [],
+                 ):
+        super().__init__(tag=tag, position=position, effects=effects, layout_effects=layout_effects)
+        self.children = children
+
+    def construct(self, canvas: Canvas):
+        self.canvas = canvas
+        for child in self.children:
+            child.construct(canvas)
+
+    def paint(self, ctx: FrameContext, position: Position):
+        pos = self.position.add(position)
+        size = self._size.copy()
+
+        for effect in self.effects:
+            effect.process(self, ctx, pos, size, None)
+
+        for child in self.children:
+            child.paint(ctx, pos)
+
+    def layout(self, ctx: FrameContext, constraints: Constraints) -> DefinedSize:
+        max_w = 0
+        max_h = 0
+        for child in self.children:
+            child_size = child.layout(ctx, constraints)
+            child._size = child_size
+            max_w = max(max_w, child_size.width + child.position.x)
+            max_h = max(max_h, child_size.height + child.position.y)
+
+        return DefinedSize(width=max_w, height=max_h)
+
+class FlexDirection(StrEnum):
+    Row = 'Row'
+    Column = 'Column'
+
+    def __repr__(self):
+        if self == FlexDirection.Row:
+            return 'Row'
+        elif self == FlexDirection.Column:
+            return 'Column'
+
+class FlexState:
+    def __init__(self, *, direction: FlexDirection):
+        self.direction = direction
+
+    def copy(self):
+        return FlexState(direction=self.direction)
+
+class Flex(Entity):
+    def __init__(self, *, tag:str|None=None, position: Position = Position(x=0, y=0), direction: FlexDirection, effects: list[Effect] = [], layout_effects: list[LayoutEffect]=[], children: list[Entity] = []):
+        super().__init__(tag=tag, position=position, effects=effects, layout_effects=layout_effects)
+        self.children = children
+        self.state = FlexState(direction=direction)
+        self._state = self.state.copy()
+        self.effects = effects
+        self.layout_effects = layout_effects
+
+    def construct(self, canvas: Canvas):
+        self.canvas = canvas
+        for child in self.children:
+            child.construct(canvas)
+
+    def paint(self, ctx: FrameContext, position: Position):
+        pos = self.position.add(position)
+
+        for effect in self.effects:
+            effect.process(self, ctx, pos, self._size, self._state)
+
+        for child in self.children:
+            child.paint(ctx, pos)
+            if self._state.direction == FlexDirection.Row:
+                pos.x += child._size.width
+            else:
+                pos.y += child._size.height
+
+    def layout(self, ctx: FrameContext, constraints: Constraints) -> DefinedSize:
+        if len(self.layout_effects) == 0:
+            state = self.state
+        else:
+            state = self.state.copy()
+            for effect in self.layout_effects:
+                effect.process(self, ctx, state)
+
+        specific_children_size = 0
+        flex_total = 0
+        max_cross = 0
+
+        constraints.min_width = 0
+        constraints.min_height = 0
+
+        for child in self.children:
+            if hasattr(child, 'flex') and child.flex != 0:
+                flex_total += child.flex
+                continue
+
+            if state.direction == FlexDirection.Row:
+                child._size = child.layout(ctx, constraints)
+                specific_children_size += child._size.width
+                max_cross = max(max_cross, child._size.height)
+            else:
+                child._size = child.layout(ctx, constraints)
+                specific_children_size += child._size.height
+                max_cross = max(max_cross, child._size.width)
+
+        if state.direction == FlexDirection.Row:
+            rest = constraints.max_width - specific_children_size
+        else:
+            rest = constraints.max_height - specific_children_size
+
+        for child in self.children:
+            if not hasattr(child, 'flex'):
+                continue
+
+            c = copy.copy(constraints)
+
+            if state.direction == FlexDirection.Row:
+                c.max_width = rest * child.flex / flex_total
+                child.size = child.layout(c, delta_time)
+            else:
+                c.max_height = rest * child.flex / flex_total
+                child.size = child.layout(c, delta_time)
+
+        if state.direction == FlexDirection.Row:
+            return Size(constraints.max_width, max_cross)
+        else:
+            return Size(max_cross, constraints.max_height)
 

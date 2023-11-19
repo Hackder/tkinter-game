@@ -4,8 +4,7 @@ from tkinter import Tk, Canvas
 from engine.entities.basic import RootScene
 from engine.models import FrameContext
 
-
-class Renderer:
+class Game:
     def __init__(self, window_width: float, window_height: float, scene: RootScene):
         self.root = Tk()
         self.root.geometry(f"{window_width}x{window_height}")
@@ -27,5 +26,5 @@ class Renderer:
 
     def start(self):
         self.last_frame = timer()
-        self.frame()
+        self.root.after(16, self.frame)
         self.root.mainloop()

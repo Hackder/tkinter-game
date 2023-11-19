@@ -46,10 +46,10 @@ class FpsCounter(Entity):
 
     def paint(self, ctx: FrameContext, position: Position):
         for effect in self.effects:
-            effect.process(ctx, position, self._size, self._state)
+            effect.process(self, ctx, position, self._size, self._state)
 
         self.canvas.itemconfigure(self.id, text=f'{self._state.fps:.2f} fps', width=self._size.width)
-        self.canvas.coords(self.id, position.x, position.y)
+        self.canvas.coords(self.id, position.x + self.position.x, position.y + self.position.y)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> DefinedSize:
         self.update()
@@ -57,7 +57,7 @@ class FpsCounter(Entity):
         state = self.state.copy()
 
         for effect in self.layout_effects:
-            effect.process(ctx, state)
+            effect.process(self, ctx, state)
 
         self._state = state
 
