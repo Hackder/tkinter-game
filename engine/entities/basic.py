@@ -21,7 +21,6 @@ class Entity(ABC):
         self.position = position
         self.effects = effects
         self.layout_effects = layout_effects
-        self.flex = 0
 
     @abstractmethod
     def construct(self, canvas: Canvas):
@@ -56,8 +55,10 @@ class RootScene:
             child.paint(ctx, self.position)
 
     def layout(self, ctx: FrameContext):
+        constraints = Constraints(min_width=0, min_height=0, max_width=ctx.width, max_height=ctx.height)
+
         for child in self.children:
-            child.layout(ctx, Constraints.unbounded())
+            child.layout(ctx, constraints)
 
 class RectState:
     def __init__(self, *, size: Size, fill: str, outline: str, outline_width: float):
@@ -74,8 +75,8 @@ class Rect(Entity):
                  tag: str|None = None,
                  position: Position = Position(x=0, y=0),
                  size: Size = Size.unbounded(),
-                 fill: str = 'black',
-                 outline: str = 'red',
+                 fill: str = 'red',
+                 outline: str = 'black',
                  outline_width: float = 1.0,
                  effects: list[Effect] = [],
                  layout_effects: list[LayoutEffect] = [],
@@ -94,7 +95,7 @@ class Rect(Entity):
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)
-        size = self._size
+        size = self._size.copy()
 
         for effect in self.effects:
             effect.process(self, ctx, pos, size, None)

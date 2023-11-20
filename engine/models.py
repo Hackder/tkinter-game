@@ -30,6 +30,7 @@ class Size:
                 width=max(self.width, other.width) if self.width is not None and other.width is not None else None,
                 height=max(self.height, other.height) if self.height is not None and other.height is not None else None
                 )
+    
 
     def __repr__(self):
         return f"Size(width={self.width}, height={self.height})"
@@ -40,10 +41,21 @@ class DefinedSize(Size):
         self.height = height
 
     def copy(self):
-        return copy.copy(self)
+        return copy.deepcopy(self)
 
     def max(self, other: DefinedSize):
         return DefinedSize(width=max(self.width, other.width), height=max(self.height, other.height))
+
+    def distance(self, other: DefinedSize):
+        dw = self.width - other.width
+        dh = self.height - other.height
+        return max(abs(dw), abs(dh))
+
+    def lerp(self, other: DefinedSize, progress: float):
+        return DefinedSize(width=self.width + (other.width - self.width) * progress, height=self.height + (other.height - self.height) * progress)
+
+    def __eq__(self, other: DefinedSize):
+        return self.width == other.width and self.height == other.height
 
     def __repr__(self):
         return f"DefinedSize(width={self.width}, height={self.height})"
@@ -91,41 +103,21 @@ class Constraints:
 
     def fit_width(self, width: float|None):
         if width is None:
-            if self.max_width is None:
-                raise ValueError("Cannot fit None width into unbounded constraints")
             return self.max_width
 
-        minimum = max(self.min_width, width)
-
-        if self.max_width is None:
-            return minimum
-
-        return min(self.max_width, minimum)
+        return min(self.max_width, max(self.min_width, width))
 
     def fit_height(self, height: float|None):
         if height is None:
-            if self.max_height is None:
-                raise ValueError("Cannot fit None height into unbounded constraints")
             return self.max_height
 
-        minimum = max(self.min_height, height)
-
-        if self.max_height is None:
-            return minimum
-
-        return min(self.max_height, minimum)
+        return min(self.max_height, max(self.min_height, height))
 
     def to_max_defined_size(self) -> DefinedSize:
-        if self.max_width is None or self.max_height is None:
-            raise ValueError("Cannot convert unbounded constraints to DefinedSize")
-
         return DefinedSize(width=self.max_width, height=self.max_height)
 
     def fit_size(self, size: Size) -> DefinedSize:
         return DefinedSize(width=self.fit_width(size.width), height=self.fit_height(size.height))
-
-    def is_unbounded(self):
-        return self.max_width is None or self.max_height is None
 
     def with_min(self, min_width: float, min_height: float):
         return Constraints(min_width=min_width, min_height=min_height, max_width=self.max_width, max_height=self.max_height)

@@ -1,5 +1,6 @@
 import copy
 from tkinter import Canvas
+from enum import StrEnum
 
 from engine.entities.effects import Effect, LayoutEffect
 from engine.models import FrameContext, DefinedSize, Constraints, Position
@@ -29,7 +30,7 @@ class ScreenSizeLayout(Entity):
 
         return DefinedSize(width=ctx.width, height=ctx.height)
 
-class PaddingSize:
+class EdgeInset:
     def __init__(self, top: float, right: float, bottom: float, left: float):
         self.top = top
         self.right = right
@@ -38,10 +39,10 @@ class PaddingSize:
 
     @staticmethod
     def all(value: float):
-        return PaddingSize(top=value, right=value, bottom=value, left=value)
+        return EdgeInset(top=value, right=value, bottom=value, left=value)
 
 class PaddingState:
-    def __init__(self, padding: PaddingSize):
+    def __init__(self, padding: EdgeInset):
         self.padding = padding
 
     def copy(self):
@@ -52,7 +53,7 @@ class Padding(Entity):
                  tag: str|None = None,
                  position: Position = Position(x=0, y=0),
                  effects: list[Effect] = [],
-                 padding: PaddingSize,
+                 padding: EdgeInset,
                  layout_effects: list[LayoutEffect] = [],
                  child: Entity,
                  ):
@@ -84,9 +85,6 @@ class Padding(Entity):
         c = constraints.copy()
         x_padding = state.padding.left + state.padding.right
         y_padding = state.padding.top + state.padding.bottom
-
-        if c.max_width is None or c.max_height is None:
-            raise ValueError("Cannot apply padding to unbounded constraints")
 
         c.min_width -= x_padding
         c.max_width -= x_padding
@@ -183,7 +181,14 @@ class FlexState:
         return FlexState(direction=self.direction)
 
 class Flex(Entity):
-    def __init__(self, *, tag:str|None=None, position: Position = Position(x=0, y=0), direction: FlexDirection, effects: list[Effect] = [], layout_effects: list[LayoutEffect]=[], children: list[Entity] = []):
+    def __init__(self, *,
+                 tag:str|None=None,
+                 position: Position = Position(x=0, y=0), 
+                 direction: FlexDirection, 
+                 effects: list[Effect] = [],
+                 layout_effects: list[LayoutEffect]=[],
+                 children: list[Entity] = []
+                 ):
         super().__init__(tag=tag, position=position, effects=effects, layout_effects=layout_effects)
         self.children = children
         self.state = FlexState(direction=direction)
@@ -209,6 +214,9 @@ class Flex(Entity):
             else:
                 pos.y += child._size.height
 
+    def is_flex_child(self, child: Entity) -> bool:
+        return hasattr(child, 'state') and hasattr(child.state, 'flex') and child.state.flex != 0 # type: ignore
+
     def layout(self, ctx: FrameContext, constraints: Constraints) -> DefinedSize:
         if len(self.layout_effects) == 0:
             state = self.state
@@ -225,8 +233,8 @@ class Flex(Entity):
         constraints.min_height = 0
 
         for child in self.children:
-            if hasattr(child, 'flex') and child.flex != 0:
-                flex_total += child.flex
+            if self.is_flex_child(child):
+                flex_total += child.state.flex # type: ignore
                 continue
 
             if state.direction == FlexDirection.Row:
@@ -244,20 +252,60 @@ class Flex(Entity):
             rest = constraints.max_height - specific_children_size
 
         for child in self.children:
-            if not hasattr(child, 'flex'):
+            if not self.is_flex_child(child): # type: ignore
                 continue
 
             c = copy.copy(constraints)
 
             if state.direction == FlexDirection.Row:
-                c.max_width = rest * child.flex / flex_total
-                child.size = child.layout(c, delta_time)
+                c.max_width = rest * child.state.flex / flex_total # type: ignore
+                child._size = child.layout(ctx, c)
             else:
-                c.max_height = rest * child.flex / flex_total
-                child.size = child.layout(c, delta_time)
+                c.max_height = rest * child.state.flex / flex_total # type: ignore
+                child._size = child.layout(ctx, c)
 
         if state.direction == FlexDirection.Row:
-            return Size(constraints.max_width, max_cross)
+            return DefinedSize(width=constraints.max_width, height=max_cross)
         else:
-            return Size(max_cross, constraints.max_height)
+            return DefinedSize(width=max_cross, height=constraints.max_height)
+
+class ExpandState:
+    def __init__(self, *, flex: int):
+        self.flex = flex
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+class Expanded(Entity):
+    def __init__(self, *,
+                 tag:str|None=None,
+                 position: Position = Position(x=0, y=0), 
+                 flex: int = 1,
+                 effects: list[Effect] = [],
+                 layout_effects: list[LayoutEffect]=[],
+                 child: Entity|None = None
+                 ):
+        super().__init__(tag=tag, position=position, effects=effects, layout_effects=layout_effects)
+        self.child = child
+        self.state = ExpandState(flex=flex)
+
+    def construct(self, canvas: Canvas):
+        self.canvas = canvas
+        if self.child is not None:
+            self.child.construct(canvas)
+
+    def paint(self, ctx: FrameContext, position: Position):
+        pos = self.position.add(position)
+
+        for effect in self.effects:
+            effect.process(self, ctx, pos, self._size, None)
+
+        if self.child is not None:
+            self.child.paint(ctx, pos)
+
+    def layout(self, ctx: FrameContext, constraints: Constraints) -> DefinedSize:
+        if self.child is not None:
+            self.child._size = self.child.layout(ctx, constraints)
+
+        return constraints.to_max_defined_size()
 

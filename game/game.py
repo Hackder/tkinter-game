@@ -1,8 +1,8 @@
 from engine.animation.utils import Animation, AnimationDirection, AnimationEnd, Easing
 from engine.debug.entities import FpsCounter
 from engine.entities.basic import Rect, RootScene
-from engine.entities.effects import LayoutEffect, PositionTransition, SquareShake
-from engine.entities.layout import Center, ScreenSizeLayout, Padding, PaddingSize, Stack
+from engine.entities.effects import LayoutEffect, PositionTransition, SizeTransition, SquareShake
+from engine.entities.layout import Center, Flex, FlexDirection, ScreenSizeLayout, Padding, EdgeInset, Stack, Expanded
 from engine.models import Size, Position
 from engine.game import Game
 
@@ -38,7 +38,7 @@ scene = RootScene(
                                 fill='gray',
                                 effects=[
                                     SquareShake(),
-                                    PositionTransition(speed=100)
+                                    PositionTransition(speed=100, skip=100)
                                     ],
                                 ),
                             Rect(
@@ -47,7 +47,7 @@ scene = RootScene(
                                 fill='red',
                                 effects=[
                                     SquareShake(),
-                                    PositionTransition(speed=100)
+                                    PositionTransition(duration=.1)
                                     ],
                                 ),
                             ]
@@ -56,7 +56,37 @@ scene = RootScene(
                 ),
             ScreenSizeLayout(
                 child=Padding(
-                    padding=PaddingSize.all(20),
+                    padding=EdgeInset.all(40),
+                    child=Flex(
+                        direction=FlexDirection.Row,
+                        children=[
+                            Expanded(),
+                            Rect(
+                                size=Size(width=150, height=70),
+                                fill='gray',
+                                effects=[
+                                    SizeTransition(speed=100),
+                                    PositionTransition(speed=50)
+                                    ]
+                                ),
+                            Rect(
+                                size=Size(width=150, height=70),
+                                fill='red',
+                                effects=[
+                                    PositionTransition(speed=50)
+                                    ]
+                                ),
+                            Expanded(),
+                            ]
+                        )
+                    )
+                ),
+            ScreenSizeLayout(
+                child=Padding(
+                    layout_effects=[
+                        PaddingEffect(start=0, end=20, duration=1, repeat_times=3)
+                        ],
+                    padding=EdgeInset.all(20),
                     child=FpsCounter()
                     )
                 )
@@ -66,6 +96,12 @@ scene = RootScene(
 game = Game(800, 600, scene)
 
 def click(e):
-    game.scene.children[0].child.child.children[0].position.x = 100
+    # game.scene.children[0].child.child.children[0].position.x = 100
+    entity = game.scene.children[1].child.child.children[1]
+    if entity.state.size.width == 200:
+        entity.state.size.width = 100
+    else:
+        entity.state.size.width = 200
+    
 
 game.canvas.bind('<Button-1>', click)
