@@ -3,13 +3,15 @@ import copy
 from dataclasses import dataclass
 import colorsys
 
+from engine.assets import AssetManader
 from engine.traits import Transitionable
 
 class FrameContext:
-    def __init__(self, *, delta_time: float, width: float, height: float):
+    def __init__(self, *, delta_time: float, width: float, height: float, asset_manager: AssetManader):
         self.delta_time = delta_time
         self.width = width
         self.height = height
+        self.asset_manager = asset_manager
 
     def __repr__(self):
         return f"FrameContext(delta_time={self.delta_time})"

@@ -3,6 +3,7 @@ import copy
 from abc import ABC, abstractmethod
 from tkinter import Canvas
 from typing import Any
+from engine.assets import AssetManader
 
 from engine.models import Color, FrameContext, Position, Size, Constraints
 from engine.entities.components.base import Component
@@ -213,3 +214,56 @@ class Text(Entity):
 
         return self._size
 
+class SpriteState:
+    def __init__(self, *, asset_key: str, size: Size | None = None):
+        self.asset_key = asset_key
+        self.size = size
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+class Sprite(Entity):
+    state: SpriteState
+
+    def __init__(self, *, tag: str|None = None,
+                 position: Position = Position(x=0, y=0),
+                 size: Size | None = None,
+                 asset_key: str,
+                 components: list[Component] = []
+                 ):
+        super().__init__(tag=tag, position=position, components=components)
+        self.state = SpriteState(asset_key=asset_key, size=size)
+        self._state = self.state.copy()
+        self._size = Size(width=0, height=0)
+
+    def create(self, canvas: Canvas):
+        self.canvas = canvas
+        self.id = canvas.create_image(0, 0, image='', anchor='nw')
+
+        for component in self.components:
+            component.create(self)
+
+    def destroy(self):
+        for component in self.components:
+            component.destroy(self)
+        self.canvas.delete(self.id)
+
+    def paint(self, ctx: FrameContext, position: Position):
+        pos = self.position.add(position)
+
+        for effect in self.components:
+            effect.before_paint(self, ctx, pos, self._size, self._state)
+        
+
+        self.canvas.coords(self.id, pos.x, pos.y)
+        asset = ctx.asset_manager.get(self._state.asset_key, self._size.width, self._size.height)
+        self.canvas.itemconfigure(self.id, image=asset)
+
+    def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
+        state = self.state.copy()
+        for component in self.components:
+            component.before_layout(self, ctx, state)
+
+        self._state = state
+
+        return constraints.fit_size(state.size)

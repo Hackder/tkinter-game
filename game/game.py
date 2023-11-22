@@ -1,10 +1,13 @@
 from tkinter import Canvas
 import copy
 
+from PIL.Image import Resampling
+
 from engine.animation.utils import Animation, AnimationDirection, AnimationEnd
-from engine.entities.basic import Entity, Rect, RootScene, Text
+from engine.assets import Asset, AssetType
+from engine.entities.basic import Entity, Rect, RootScene, Sprite, Text
 from engine.entities.components.base import Component
-from engine.entities.components.debug import DebugBounds, FpsCounter
+from engine.entities.components.debug import DebugBounds, FpsCounter, AssetLoaderStats
 from engine.entities.components.effects import FillTransition, PositionTransition, SquareShake, SizeLayoutTransition
 from engine.entities.layout import Center, Flex, FlexDirection, ScreenSizeLayout, Padding, EdgeInset, Stack, Expanded
 from engine.models import Size, Position, FrameContext, Constraints, Color
@@ -129,6 +132,19 @@ class SwitchOnClick(Component):
 scene = RootScene(
         children=[
             ScreenSizeLayout(
+                    child=Padding(
+                        padding=EdgeInset.all(20),
+                        child=Center(
+                            child=Sprite(
+                                components=[
+                                    DebugBounds()
+                                    ],
+                                asset_key="small"
+                                )
+                            )
+                        )
+                    ),
+            ScreenSizeLayout(
                 child=Center(
                     child=Stack(
                         children=[
@@ -193,21 +209,33 @@ scene = RootScene(
                         PaddingEffect(start=0, end=20, duration=1, repeat_times=3)
                         ],
                     padding=EdgeInset.all(20),
-                    child=Stack(
-                        children=[
-                            Text(
-                                components=[
-                                    FpsCounter(),
-                                    DebugBounds()
-                                    ],
-                                text="Hello world"
-                                )
-                            ]
+                    child=Rect(
+                            fill=Color.white(),
+                            child=Flex(
+                                direction=FlexDirection.Column,
+                                children=[
+                                    Text(
+                                        components=[
+                                            FpsCounter(),
+                                            DebugBounds()
+                                            ],
+                                        text=""
+                                        ),
+                                    Text(
+                                        components=[
+                                            AssetLoaderStats(),
+                                            ],
+                                        text=''
+                                        ),
+                                    ]
+                                ),
                         ),
                     )
-                )
+                ),
             ]
         )
 
 game = Game(800, 600, scene)
+game.asset_manager.register('hero', Asset(AssetType.Still, 'assets/hero.png'))
+game.asset_manager.register('small', Asset(AssetType.Still, 'assets/small.png', Resampling.NEAREST))
 

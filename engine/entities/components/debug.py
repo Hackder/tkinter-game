@@ -53,3 +53,10 @@ class DebugBounds(Component):
         entity.canvas.itemconfig(self.text_id,
                                  text=f'{entity.__class__.__name__} (tag={entity.tag}) {size.width:.2f}x{size.height:.2f}',
                                  fill=self.color.to_hex())
+
+class AssetLoaderStats(Component):
+    def before_layout(self, entity: Entity, ctx: FrameContext, state: Any | None):
+        if state is None or not hasattr(state, 'text'):
+            raise Exception('AssetLoaderStats component must be on an entity which supports text')
+
+        state.text = f'Assets: {ctx.asset_manager.loaded}'

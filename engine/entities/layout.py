@@ -304,6 +304,8 @@ class Flex(Entity):
         else:
             rest = constraints.max_height - specific_children_size
 
+        main_size = specific_children_size
+
         for child in self.children:
             if not self.is_flex_child(child): # type: ignore
                 continue
@@ -313,14 +315,16 @@ class Flex(Entity):
             if state.direction == FlexDirection.Row:
                 c.max_width = rest * child.state.flex / flex_total # type: ignore
                 child._size = child.layout(ctx, c)
+                main_size = constraints.max_width
             else:
                 c.max_height = rest * child.state.flex / flex_total # type: ignore
                 child._size = child.layout(ctx, c)
+                main_size = constraints.max_height
 
         if state.direction == FlexDirection.Row:
-            return Size(width=constraints.max_width, height=max_cross)
+            return Size(width=main_size, height=max_cross)
         else:
-            return Size(width=max_cross, height=constraints.max_height)
+            return Size(width=max_cross, height=main_size)
 
 class ExpandState:
     def __init__(self, *, flex: int):
