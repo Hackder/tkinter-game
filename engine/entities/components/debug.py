@@ -59,7 +59,7 @@ class AssetLoaderStats(Component):
         if state is None or not hasattr(state, 'text'):
             raise Exception('AssetLoaderStats component must be on an entity which supports text')
 
-        state.text = f'Assets: {ctx.asset_manager.loaded}'
+        state.text = f'Assets: {ctx.asset_manager.loaded} / {ctx.asset_manager.total()}'
 
 class PrintLifecycle(Component):
     def __init__(self, *, tag: str = 'dbg', create: bool = False, destroy: bool = False, before_layout: bool = False, before_paint: bool = False):

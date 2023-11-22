@@ -27,7 +27,7 @@ class Game:
                            asset_manager=self.asset_manager)
         self.scene.layout(ctx)
         self.scene.paint(ctx)
-        self.root.after(8, self.frame)
+        self.root.after(1, self.frame)
 
     def start(self):
         self.last_frame = timer()

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import StrEnum
+from threading import Thread
 from PIL import Image, ImageTk
 
 class AssetType(StrEnum):
@@ -18,13 +19,37 @@ class AssetManader:
         self.assets: dict[tuple[str, int, int], ImageTk.PhotoImage] = dict()
         self.queue = list()
         self.loaded = 0
+        self.thread = Thread(target=self.__load_thread, daemon=True)
+        self.loading = False
+        
+    def __load_thread(self):
+        self.loading = True
+        while len(self.queue) > 0:
+            (key, width, height) = self.queue.pop(0)
+            asset = self.raw_assets.get(key, None)
+            if asset is None:
+                raise Exception(f'Asset {key} not found')
 
-    def register(self, key: str, asset: Asset):
+            if asset.type == AssetType.Still:
+                self.__load_still(key, asset, width, height)
+        self.loading = False
+
+    def start(self):
+        if self.loading:
+            return
+        self.thread = Thread(target=self.__load_thread, daemon=True)
+        self.thread.start()
+
+    def register(self, key: str, asset: Asset, preload_sizes: list[tuple[int, int]] = []):
         self.raw_assets[key] = asset
+        for (width, height) in preload_sizes:
+            self.queue.append((key, width, height))
 
-    def __load_still(self, key: str, asset: Asset, width: float, height: float):
-        width = int(width)
-        height = int(height)
+
+    def total(self) -> int:
+        return self.loaded + len(self.queue)
+
+    def __load_still(self, key: str, asset: Asset, width: int, height: int):
         image = Image.open(asset.path)
         image = image.resize((width, height), resample=asset.resampling)
         tk_image =  ImageTk.PhotoImage(image, width=width, height=height)
@@ -32,11 +57,10 @@ class AssetManader:
         self.loaded += 1
         return tk_image
 
-    def get(self, key: str, width: float, height: float) -> ImageTk.PhotoImage | None:
-        width = int(width)
-        height = int(height)
-        if (key, width, height) in self.assets:
-            return self.assets[(key, width, height)]
+    def get(self, key: str, width: int, height: int) -> ImageTk.PhotoImage | None:
+        cache = self.assets.get((key, width, height), None)
+        if cache is not None:
+            return cache
 
         asset = self.raw_assets.get(key, None)
         if asset is None:

@@ -3,7 +3,7 @@ import copy
 
 from PIL.Image import Resampling
 
-from engine.animation.utils import Animation, AnimationDirection, AnimationEnd
+from engine.animation.utils import Animation, AnimationDirection, AnimationEnd, Easing
 from engine.assets import Asset, AssetType
 from engine.entities.basic import Entity, Rect, RootScene, Sprite, Text
 from engine.entities.components.base import Component
@@ -131,56 +131,69 @@ class SwitchOnClick(Component):
 
 scene = RootScene(
         children=[
+            # ScreenSizeLayout(
+            #     child=Sprite(
+            #         asset_key='small',
+            #         )
+            #     ),
             ScreenSizeLayout(
                     child=Padding(
                         padding=EdgeInset.all(20),
-                        child=Center(
-                            # child=Sprite(
-                            #     size=Size(width=400, height=400),
-                            #     components=[
-                            #         DebugBounds()
-                            #         ],
-                            #     asset_key="hero2"
-                            #     )
-                            child=Rect(
-                                fill=Color.from_hex('#ADD8E6'),
-                                )
+                        child=Flex(
+                            direction=FlexDirection.Column,
+                            gap=20,
+                            children=[
+                                Expanded(),
+                                *[Flex(
+                                    direction=FlexDirection.Row,
+                                    gap=20,
+                                    children=[Sprite(
+                                        size=Size(width=100, height=100),
+                                        components=[
+                                            ChangeSize(),
+                                            SizeLayoutTransition(duration=.3, easing=Easing.ease_out),
+                                            ],
+                                        asset_key="small"
+                                        ) for _ in range(10)]
+                                    ) for _ in range(4)],
+                                Expanded()
+                                ]
                             )
                         )
                     ),
-            ScreenSizeLayout(
-                child=Center(
-                    child=Scene(
-                        children=[
-                            EntitySwitcher(
-                                components=[
-                                    SwitchOnClick()
-                                    ],
-                                entities=[
-                                    Rect(
-                                        size=Size(width=150, height=70),
-                                        fill=Color.gray(),
-                                        components=[
-                                            SquareShake(),
-                                            PositionTransition(speed=100, skip=100),
-                                            DebugBounds(color=Color.blue()),
-                                            ],
-                                        ),
-                                    Rect(
-                                        position=Position(x=100, y=150),
-                                        size=Size(width=150, height=70),
-                                        fill=Color.red(),
-                                        components=[
-                                            SquareShake(),
-                                            PositionTransition(duration=.1)
-                                            ],
-                                        ),
-                                    ]
-                                )
-                            ]
-                        )
-                    )
-                ),
+            # ScreenSizeLayout(
+            #     child=Center(
+            #         child=Scene(
+            #             children=[
+            #                 EntitySwitcher(
+            #                     components=[
+            #                         SwitchOnClick()
+            #                         ],
+            #                     entities=[
+            #                         Rect(
+            #                             size=Size(width=150, height=70),
+            #                             fill=Color.gray(),
+            #                             components=[
+            #                                 SquareShake(),
+            #                                 PositionTransition(speed=100, skip=100),
+            #                                 DebugBounds(color=Color.blue()),
+            #                                 ],
+            #                             ),
+            #                         Rect(
+            #                             position=Position(x=100, y=150),
+            #                             size=Size(width=150, height=70),
+            #                             fill=Color.red(),
+            #                             components=[
+            #                                 SquareShake(),
+            #                                 PositionTransition(duration=.1)
+            #                                 ],
+            #                             ),
+            #                         ]
+            #                     )
+            #                 ]
+            #             )
+            #         )
+            #     ),
             ScreenSizeLayout(
                 child=Padding(
                     padding=EdgeInset.all(40),
@@ -188,26 +201,26 @@ scene = RootScene(
                         direction=FlexDirection.Column,
                         children=[
                             Flex(
-                                direction=FlexDirection.Row,
-                                children=[
-                                    Expanded(),
-                                    Rect(
-                                        size=Size(width=150, height=70),
-                                        fill=Color.gray(),
-                                        components=[
-                                            ChangeSize(),
-                                            ChangeColor(),
-                                            FillTransition(duration=.3),
-                                            SizeLayoutTransition(speed=100),
-                                            ]
-                                        ),
-                                    Rect(
-                                        size=Size(width=150, height=70),
-                                        fill=Color.red(),
-                                        ),
-                                    Expanded(),
-                                    ]
-                                ),
+                            direction=FlexDirection.Row,
+                            children=[
+                                Expanded(),
+                                Rect(
+                                    size=Size(width=150, height=70),
+                                    fill=Color.gray(),
+                                    components=[
+                                        ChangeSize(),
+                                        ChangeColor(),
+                                        FillTransition(duration=.3),
+                                        SizeLayoutTransition(speed=100),
+                                        ]
+                                    ),
+                                Rect(
+                                    size=Size(width=150, height=70),
+                                    fill=Color.red(),
+                                    ),
+                                Expanded(),
+                                ]
+                            ),
                             ]
                         ),
                     )
@@ -222,7 +235,7 @@ scene = RootScene(
                         children=[
                                 Rect(
                                     fill=Color.white(),
-                                    size=Size(width=100, height=50),
+                                    size=Size(width=140, height=50),
                                     child=Padding(
                                         padding=EdgeInset.all(10),
                                         child=Flex(
@@ -253,7 +266,7 @@ scene = RootScene(
         )
 
 game = Game(800, 600, scene)
-game.asset_manager.register('hero', Asset(AssetType.Still, 'assets/hero.png'))
+# game.asset_manager.register('hero', Asset(AssetType.Still, 'assets/hero.png'), [(i, 100) for i in range(100, 201)])
 game.asset_manager.register('hero2', Asset(AssetType.Still, 'assets/hero.jpg'))
 game.asset_manager.register('small', Asset(AssetType.Still, 'assets/small.png', Resampling.NEAREST))
-
+game.asset_manager.start()

@@ -260,7 +260,7 @@ class Sprite(Entity):
         for effect in self.components:
             effect.before_paint(self, ctx, pos, self._size, self._state)
         
-        asset = ctx.asset_manager.get(self._state.asset_key, self._size.width, self._size.height)
+        asset = ctx.asset_manager.get(self._state.asset_key, int(self._size.width), int(self._size.height))
         self.canvas.coords(self.id, pos.x, pos.y)
         self.canvas.itemconfigure(self.id, image=asset)
 

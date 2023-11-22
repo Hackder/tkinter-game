@@ -268,23 +268,25 @@ class FlexDirection(StrEnum):
             return 'Column'
 
 class FlexState:
-    def __init__(self, *, direction: FlexDirection):
+    def __init__(self, *, direction: FlexDirection, gap: float):
         self.direction = direction
+        self.gap = gap
 
     def copy(self):
-        return FlexState(direction=self.direction)
+        return copy.deepcopy(self)
 
 class Flex(Entity):
     def __init__(self, *,
                  tag:str|None=None,
                  position: Position = Position(x=0, y=0), 
                  direction: FlexDirection, 
+                 gap: float = 0,
                  components: list[Component] = [],
                  children: list[Entity] = []
                  ):
         super().__init__(tag=tag, position=position, components=components)
         self.children = children
-        self.state = FlexState(direction=direction)
+        self.state = FlexState(direction=direction, gap=gap)
         self._state = self.state.copy()
 
     def create(self, canvas: Canvas):
@@ -312,8 +314,10 @@ class Flex(Entity):
             child.paint(ctx, pos)
             if self._state.direction == FlexDirection.Row:
                 pos.x += child._size.width
+                pos.x += self._state.gap
             else:
                 pos.y += child._size.height
+                pos.y += self._state.gap
 
     def is_flex_child(self, child: Entity) -> bool:
         return hasattr(child, 'state') and hasattr(child.state, 'flex') and child.state.flex != 0 # type: ignore
@@ -345,6 +349,8 @@ class Flex(Entity):
                 child._size = child.layout(ctx, constraints)
                 specific_children_size += child._size.height
                 max_cross = max(max_cross, child._size.width)
+
+        specific_children_size += state.gap * (len(self.children) - 1)
 
         if state.direction == FlexDirection.Row:
             rest = constraints.max_width - specific_children_size
