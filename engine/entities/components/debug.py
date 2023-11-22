@@ -32,6 +32,10 @@ class DebugBounds(Component):
         self.id = entity.canvas.create_rectangle(0, 0, 0, 0, outline='red', width=1)
         self.text_id = entity.canvas.create_text(0, 0, text='', fill='red', anchor='sw', font=('Arial', 10))
 
+    def destroy(self, entity: Entity):
+        entity.canvas.delete(self.id)
+        entity.canvas.delete(self.text_id)
+
     def before_paint(self, entity: Entity, ctx: FrameContext, position: Position, size: Size, state: Any | None):
         entity.canvas.coords(self.id, position.x, position.y, position.x + size.width, position.y + size.height)
         entity.canvas.coords(self.text_id, position.x, position.y)
