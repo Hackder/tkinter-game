@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from tkinter import Canvas
 from typing import Any
 
-from engine.models import FrameContext, Position, Size, Constraints
+from engine.models import Color, FrameContext, Position, Size, Constraints
 from engine.entities.components.base import Component
 
 
@@ -69,7 +69,7 @@ class RootScene:
             child.layout(ctx, constraints)
 
 class RectState:
-    def __init__(self, *, size: Size | None, fill: str, outline: str, outline_width: float):
+    def __init__(self, *, size: Size | None, fill: Color, outline: Color, outline_width: float):
         self.size = size
         self.fill = fill
         self.outline = outline
@@ -79,12 +79,14 @@ class RectState:
         return copy.deepcopy(self)
 
 class Rect(Entity):
+    state: RectState
+
     def __init__(self, *,
                  tag: str|None = None,
                  position: Position = Position(x=0, y=0),
                  size: Size | None = None,
-                 fill: str = 'red',
-                 outline: str = 'black',
+                 fill: Color = Color.white(),
+                 outline: Color = Color.black(),
                  outline_width: float = 1.0,
                  components: list[Component] = [],
                  child: Entity|None = None,
@@ -116,10 +118,13 @@ class Rect(Entity):
         size = self._size.copy()
 
         for effect in self.components:
-            effect.before_paint(self, ctx, pos, size, None)
+            effect.before_paint(self, ctx, pos, size, self._state)
         
         self.canvas.coords(self.id, pos.x, pos.y, pos.x + size.width, pos.y + size.height)
-        self.canvas.itemconfigure(self.id, fill=self._state.fill, outline=self._state.outline, width=self._state.outline_width)
+        self.canvas.itemconfigure(self.id,
+                                  fill=self._state.fill.to_hex(),
+                                  outline=self._state.outline.to_hex(),
+                                  width=self._state.outline_width)
 
         if self.child is not None:
             self.child.paint(ctx, pos)
@@ -133,16 +138,20 @@ class Rect(Entity):
 
         if self.child is not None:
             self.child._size = self.child.layout(ctx, constraints.limit(self.state.size))
-            size = Size(
-                    width=max(state.size.width, self.child._size.width),
-                    height=max(state.size.height, self.child._size.height)
-                    )
+            if state.size is not None:
+                size = Size(
+                        width=max(state.size.width, self.child._size.width),
+                        height=max(state.size.height, self.child._size.height)
+                        )
+            else:
+                size = self.child._size.copy()
+
             return constraints.fit_size(size)
 
         return constraints.fit_size(state.size)
 
 class TextState:
-    def __init__(self, *, text: str, width: float|None, fill: str):
+    def __init__(self, *, text: str, width: float|None, fill: Color):
         self.text = text
         self.width = width
         self.fill = fill
@@ -155,7 +164,7 @@ class Text(Entity):
                  position: Position = Position(x=0, y=0),
                  text: str,
                  width: float|None = None,
-                 fill: str = 'black',
+                 fill: Color = Color.black(),
                  components: list[Component] = []
                  ):
         super().__init__(tag=tag, position=position, components=components)
@@ -182,7 +191,10 @@ class Text(Entity):
             effect.before_paint(self, ctx, pos, self._size, self._state)
 
         self.canvas.coords(self.id, pos.x, pos.y)
-        self.canvas.itemconfigure(self.id, text=self._state.text, fill=self._state.fill, width=self._size.width)
+        self.canvas.itemconfigure(self.id,
+                                  text=self._state.text,
+                                  fill=self._state.fill.to_hex(),
+                                  width=self._size.width)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         state = self.state.copy()
@@ -191,7 +203,7 @@ class Text(Entity):
 
         self._state = state
 
-        self.canvas.itemconfigure(self.id, text=state.text, fill=state.fill, width=None)
+        self.canvas.itemconfigure(self.id, text=state.text, fill=state.fill.to_hex(), width=None)
         bbox = self.canvas.bbox(self.id)
 
         w = constraints.fit_width(bbox[2] - bbox[0] + 6)

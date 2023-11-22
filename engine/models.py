@@ -1,5 +1,7 @@
 from __future__ import annotations
 import copy
+from dataclasses import dataclass
+import colorsys
 
 from engine.traits import Transitionable
 
@@ -96,17 +98,84 @@ class Constraints:
     def to_max_size(self) -> Size:
         return Size(width=self.max_width, height=self.max_height)
 
-    def fit_size(self, size: Size) -> Size:
+    def fit_size(self, size: Size|None) -> Size:
+        if size is None:
+            return Size(width=self.max_width, height=self.max_height)
         return Size(width=self.fit_width(size.width), height=self.fit_height(size.height))
 
     def with_min(self, min_width: float, min_height: float):
         return Constraints(min_width=min_width, min_height=min_height, max_width=self.max_width, max_height=self.max_height)
 
-    def limit(self, size: Size) -> Constraints:
-        max_w = size.width if size.width is not None else self.max_width
-        max_h = size.height if size.height is not None else self.max_height
-        return Constraints(min_width=self.min_width, min_height=self.min_height, max_width=max_w, max_height=max_h)
+    def limit(self, size: Size | None) -> Constraints:
+        if size is None:
+            return self
+
+        return Constraints(min_width=self.min_width, min_height=self.min_height, max_width=size.width, max_height=size.height)
 
     def __repr__(self):
         return f"Constraints(min_width={self.min_width}, min_height={self.min_height}, max_width={self.max_width}, max_height={self.max_height})"
+
+@dataclass
+class Color(Transitionable):
+    r: int
+    g: int
+    b: int
+
+    def copy(self):
+        return copy.copy(self)
+
+    def to_hex(self) -> str:
+        return f"#{self.r:02x}{self.g:02x}{self.b:02x}"
+
+    def to_hls(self) -> tuple[float, float, float]:
+        return colorsys.rgb_to_hls(self.r / 255.0, self.g / 255.0, self.b / 255.0)
+
+    def to_yiq(self) -> tuple[float, float, float]:
+        return colorsys.rgb_to_yiq(self.r / 255.0, self.g / 255.0, self.b / 255.0)
+
+    def interpolate(self, other: Color, progress: float) -> Color:
+        y, i, q = self.to_yiq()
+        oy, oi, oq = other.to_yiq()
+        return Color.from_yiq(y + (oy - y) * progress,
+                              i + (oi- i) * progress,
+                              q + (oq - q) * progress)
+
+    def distance(self, other: Color) -> float:
+        y, i, q = self.to_yiq()
+        oy, oi, oq = other.to_yiq()
+        return ((y - oy) ** 2 + (i - oi) ** 2 + (q - oq) ** 2) ** 0.5
+
+    @staticmethod
+    def from_hls(h: float, l: float, s: float) -> Color:
+        r, g, b = colorsys.hls_to_rgb(h, l, s)
+        return Color(r=round(r * 255), g=round(g * 255), b=round(b * 255))
+
+    @staticmethod
+    def from_yiq(y: float, i: float, q: float) -> Color:
+        r, g, b = colorsys.yiq_to_rgb(y, i, q)
+        return Color(r=round(r * 255), g=round(g * 255), b=round(b * 255))
+
+    @staticmethod
+    def red() -> Color:
+        return Color(r=255, g=0, b=0)
+
+    @staticmethod
+    def green() -> Color:
+        return Color(r=0, g=255, b=0)
+
+    @staticmethod
+    def blue() -> Color:
+        return Color(r=0, g=0, b=255)
+
+    @staticmethod
+    def white() -> Color:
+        return Color(r=255, g=255, b=255)
+
+    @staticmethod
+    def black() -> Color:
+        return Color(r=0, g=0, b=0)
+
+    @staticmethod
+    def gray() -> Color:
+        return Color(r=128, g=128, b=128)
 

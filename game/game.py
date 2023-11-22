@@ -1,13 +1,13 @@
 from tkinter import Canvas
 import copy
 
-from engine.animation.utils import Animation, AnimationDirection, AnimationEnd, Easing
+from engine.animation.utils import Animation, AnimationDirection, AnimationEnd
 from engine.entities.basic import Entity, Rect, RootScene, Text
 from engine.entities.components.base import Component
 from engine.entities.components.debug import DebugBounds, FpsCounter
-from engine.entities.components.effects import PositionTransition, SquareShake, SizeLayoutTransition
+from engine.entities.components.effects import FillTransition, PositionTransition, SquareShake, SizeLayoutTransition
 from engine.entities.layout import Center, Flex, FlexDirection, ScreenSizeLayout, Padding, EdgeInset, Stack, Expanded
-from engine.models import Size, Position, FrameContext, Constraints
+from engine.models import Size, Position, FrameContext, Constraints, Color
 from engine.game import Game
 
 class PaddingEffect(Component):
@@ -37,13 +37,24 @@ class PaddingEffect(Component):
 class ChangeSize(Component):
     def create(self, entity):
         self.entity = entity
-        entity.canvas.tag_bind(entity.id, '<Button-1>', self.click)
+        entity.canvas.tag_bind(entity.id, '<Button-1>', self.click, add='+')
 
     def click(self, e):
         if self.entity.state.size.width == 200:
             self.entity.state.size.width = 100
         else:
             self.entity.state.size.width = 200
+
+class ChangeColor(Component):
+    def create(self, entity):
+        self.entity = entity
+        entity.canvas.tag_bind(entity.id, '<Button-1>', self.click, add='+')
+
+    def click(self, e):
+        if self.entity.state.fill.r == 255:
+            self.entity.state.fill = Color.black()
+        else:
+            self.entity.state.fill = Color.white()
 
 class EntitySwitcherState:
     def __init__(self, current: int = 0):
@@ -128,17 +139,17 @@ scene = RootScene(
                                 entities=[
                                     Rect(
                                         size=Size(width=150, height=70),
-                                        fill='gray',
+                                        fill=Color.gray(),
                                         components=[
                                             SquareShake(),
                                             PositionTransition(speed=100, skip=100),
-                                            DebugBounds(color='blue'),
+                                            DebugBounds(color=Color.blue()),
                                             ],
                                         ),
                                     Rect(
                                         position=Position(x=100, y=150),
                                         size=Size(width=150, height=70),
-                                        fill='red',
+                                        fill=Color.red(),
                                         components=[
                                             SquareShake(),
                                             PositionTransition(duration=.1)
@@ -159,15 +170,17 @@ scene = RootScene(
                             Expanded(),
                             Rect(
                                 size=Size(width=150, height=70),
-                                fill='gray',
+                                fill=Color.gray(),
                                 components=[
                                     ChangeSize(),
+                                    ChangeColor(),
+                                    FillTransition(duration=.3),
                                     SizeLayoutTransition(speed=100),
                                     ]
                                 ),
                             Rect(
                                 size=Size(width=150, height=70),
-                                fill='red',
+                                fill=Color.red(),
                                 ),
                             Expanded(),
                             ]

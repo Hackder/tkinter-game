@@ -28,14 +28,14 @@ class ObjectTransition(Component, ABC):
         self.easing = easing
 
     @abstractmethod
-    def selector(self, entity: Entity, ctx: FrameContext, position: Position, size: Size, state: object | None) -> Transitionable:
+    def selector(self, entity: Entity, ctx: FrameContext, position: Position, size: Size, state: Any | None) -> Transitionable:
         pass
 
     @abstractmethod
-    def setter(self, entity: Entity, ctx: FrameContext, position: Position, size: Size, state: object | None, value: Transitionable):
+    def setter(self, entity: Entity, ctx: FrameContext, position: Position, size: Size, state: Any | None, value: Transitionable):
         pass
 
-    def before_paint(self, entity: Entity, ctx: FrameContext, position: Position, size: Size, state: object | None):
+    def before_paint(self, entity: Entity, ctx: FrameContext, position: Position, size: Size, state: Any | None):
         new_value = self.selector(entity, ctx, position, size, state)
 
         if self.last_value is None or self.value is None or self.target_value is None:
@@ -155,6 +155,27 @@ class SizeTransition(ObjectTransition):
     def setter(self, entity: Entity, ctx: FrameContext, position: Position, size: Size, state: object | None, value: Size):
         size.width = value.width
         size.height = value.height
+
+class FillTransition(ObjectTransition):
+    def __init__(self, *,
+                 speed: float|None = None,
+                 duration: float|None = 1,
+                 skip: float|None = None,
+                 easing = Easing.linear):
+        super().__init__(speed=speed, duration=duration, skip=skip, easing=easing)
+
+    def selector(self, entity: Entity, ctx: FrameContext, position: Position, size: Size, state: Any| None) -> Transitionable:
+        if state is None or not hasattr(state, 'fill'):
+            raise Exception('FillTransition component must be on an entity which supports fill')
+
+        return state.fill
+
+    def setter(self, entity: Entity, ctx: FrameContext, position: Position, size: Size, state: Any | None, value: Transitionable):
+        if state is None or not hasattr(state, 'fill'):
+            raise Exception('FillTransition component must be on an entity which supports fill')
+
+        state.fill = value
+
 
 class SizeLayoutTransition(ObjectLayoutTransition):
     def __init__(self, *,
