@@ -327,8 +327,10 @@ class Flex(Entity):
         flex_total = 0
         max_cross = 0
 
-        constraints.min_width = 0
-        constraints.min_height = 0
+        if state.direction == FlexDirection.Row:
+            constraints.min_width = 0
+        else:
+            constraints.min_height = 0
 
         for child in self.children:
             if self.is_flex_child(child):

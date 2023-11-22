@@ -149,8 +149,7 @@ scene = RootScene(
                         )
                     ),
             ScreenSizeLayout(
-                child=Padding(
-                    padding=EdgeInset.all(40),
+                child=Center(
                     child=Scene(
                         children=[
                             EntitySwitcher(
@@ -162,7 +161,6 @@ scene = RootScene(
                                         size=Size(width=150, height=70),
                                         fill=Color.gray(),
                                         components=[
-                                            PrintLifecycle(tag='rect1', before_paint=True),
                                             SquareShake(),
                                             PositionTransition(speed=100, skip=100),
                                             DebugBounds(color=Color.blue()),
@@ -187,26 +185,31 @@ scene = RootScene(
                 child=Padding(
                     padding=EdgeInset.all(40),
                     child=Flex(
-                        direction=FlexDirection.Row,
+                        direction=FlexDirection.Column,
                         children=[
-                            Expanded(),
-                            Rect(
-                                size=Size(width=150, height=70),
-                                fill=Color.gray(),
-                                components=[
-                                    ChangeSize(),
-                                    ChangeColor(),
-                                    FillTransition(duration=.3),
-                                    SizeLayoutTransition(speed=100),
+                            Flex(
+                                direction=FlexDirection.Row,
+                                children=[
+                                    Expanded(),
+                                    Rect(
+                                        size=Size(width=150, height=70),
+                                        fill=Color.gray(),
+                                        components=[
+                                            ChangeSize(),
+                                            ChangeColor(),
+                                            FillTransition(duration=.3),
+                                            SizeLayoutTransition(speed=100),
+                                            ]
+                                        ),
+                                    Rect(
+                                        size=Size(width=150, height=70),
+                                        fill=Color.red(),
+                                        ),
+                                    Expanded(),
                                     ]
                                 ),
-                            Rect(
-                                size=Size(width=150, height=70),
-                                fill=Color.red(),
-                                ),
-                            Expanded(),
                             ]
-                        )
+                        ),
                     )
                 ),
             ScreenSizeLayout(
