@@ -163,6 +163,7 @@ class Center(Entity):
 
         return constraints.to_max_size()
 
+
 class Stack(Entity):
     def __init__(self, *,
                  tag: str|None = None,
@@ -199,9 +200,53 @@ class Stack(Entity):
             child.paint(ctx, pos)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
-        constraints = constraints.copy()
-        constraints.min_width = 0
-        constraints.min_height = 0
+        constraints = constraints.force_max()
+
+        for component in self.components: 
+            component.before_layout(self, ctx, None)
+
+        for child in self.children:
+            child._size = child.layout(ctx, constraints)
+
+        return constraints.to_max_size()
+
+class Scene(Entity):
+    def __init__(self, *,
+                 tag: str|None = None,
+                 position: Position = Position(x=0, y=0),
+                 components: list[Component] = [],
+                 children: list[Entity] = [],
+                 ):
+        super().__init__(tag=tag, position=position, components=components)
+        self.children = children
+
+    def create(self, canvas: Canvas):
+        self.canvas = canvas
+        
+        for component in self.components:
+            component.create(self)
+
+        for child in self.children:
+            child.create(canvas)
+
+    def destroy(self):
+        for component in self.components:
+            component.destroy(self)
+        for child in self.children:
+            child.destroy()
+
+    def paint(self, ctx: FrameContext, position: Position):
+        pos = self.position.add(position)
+        size = self._size.copy()
+
+        for component in self.components:
+            component.before_paint(self, ctx, pos, size, None)
+
+        for child in self.children:
+            child.paint(ctx, pos)
+
+    def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
+        constraints = constraints.with_min(0, 0)
         max_w = 0
         max_h = 0
         for child in self.children:

@@ -7,9 +7,9 @@ from engine.animation.utils import Animation, AnimationDirection, AnimationEnd
 from engine.assets import Asset, AssetType
 from engine.entities.basic import Entity, Rect, RootScene, Sprite, Text
 from engine.entities.components.base import Component
-from engine.entities.components.debug import DebugBounds, FpsCounter, AssetLoaderStats
+from engine.entities.components.debug import DebugBounds, FpsCounter, AssetLoaderStats, PrintLifecycle
 from engine.entities.components.effects import FillTransition, PositionTransition, SquareShake, SizeLayoutTransition
-from engine.entities.layout import Center, Flex, FlexDirection, ScreenSizeLayout, Padding, EdgeInset, Stack, Expanded
+from engine.entities.layout import Center, Flex, FlexDirection, Scene, ScreenSizeLayout, Padding, EdgeInset, Stack, Expanded
 from engine.models import Size, Position, FrameContext, Constraints, Color
 from engine.game import Game
 
@@ -149,8 +149,9 @@ scene = RootScene(
                         )
                     ),
             ScreenSizeLayout(
-                child=Center(
-                    child=Stack(
+                child=Padding(
+                    padding=EdgeInset.all(40),
+                    child=Scene(
                         children=[
                             EntitySwitcher(
                                 components=[
@@ -161,6 +162,7 @@ scene = RootScene(
                                         size=Size(width=150, height=70),
                                         fill=Color.gray(),
                                         components=[
+                                            PrintLifecycle(tag='rect1', before_paint=True),
                                             SquareShake(),
                                             PositionTransition(speed=100, skip=100),
                                             DebugBounds(color=Color.blue()),
@@ -213,26 +215,34 @@ scene = RootScene(
                         PaddingEffect(start=0, end=20, duration=1, repeat_times=3)
                         ],
                     padding=EdgeInset.all(20),
-                    child=Rect(
-                            fill=Color.white(),
-                            child=Flex(
-                                direction=FlexDirection.Column,
-                                children=[
-                                    Text(
-                                        components=[
-                                            FpsCounter(),
-                                            DebugBounds()
-                                            ],
-                                        text=""
+                    child=Scene(
+                        children=[
+                                Rect(
+                                    fill=Color.white(),
+                                    size=Size(width=100, height=50),
+                                    child=Padding(
+                                        padding=EdgeInset.all(10),
+                                        child=Flex(
+                                            direction=FlexDirection.Column,
+                                            children=[
+                                                Text(
+                                                    components=[
+                                                        FpsCounter(),
+                                                        DebugBounds()
+                                                        ],
+                                                    text=""
+                                                    ),
+                                                Text(
+                                                    components=[
+                                                        AssetLoaderStats(),
+                                                        ],
+                                                    text=''
+                                                    ),
+                                                ]
+                                            ),
                                         ),
-                                    Text(
-                                        components=[
-                                            AssetLoaderStats(),
-                                            ],
-                                        text=''
-                                        ),
-                                    ]
                                 ),
+                            ]
                         ),
                     )
                 ),

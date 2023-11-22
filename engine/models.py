@@ -108,6 +108,9 @@ class Constraints:
     def with_min(self, min_width: float, min_height: float):
         return Constraints(min_width=min_width, min_height=min_height, max_width=self.max_width, max_height=self.max_height)
 
+    def force_max(self):
+        return Constraints(min_width=self.max_width, min_height=self.max_height, max_width=self.max_width, max_height=self.max_height)
+
     def limit(self, size: Size | None) -> Constraints:
         if size is None:
             return self

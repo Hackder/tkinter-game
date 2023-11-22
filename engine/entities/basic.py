@@ -41,6 +41,9 @@ class Entity(ABC):
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         pass
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(tag={self.tag}, id={self.id})"
+
 
 class RootScene:
     def __init__(self, *,
@@ -78,6 +81,9 @@ class RectState:
 
     def copy(self):
         return copy.deepcopy(self)
+
+    def __repr__(self):
+        return f"RectState(size={self.size}, fill={self.fill}, outline={self.outline}, outline_width={self.outline_width})"
 
 class Rect(Entity):
     state: RectState
