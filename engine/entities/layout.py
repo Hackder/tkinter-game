@@ -4,21 +4,29 @@ from enum import StrEnum
 
 from engine.entities.effects import Effect, LayoutEffect
 from engine.models import FrameContext, DefinedSize, Constraints, Position
-from engine.entities.basic import Entity
+from engine.entities.basic import Entity, Component
 
 class ScreenSizeLayout(Entity):
     def __init__(self, *,
                  tag: str|None = None,
                  position: Position = Position(x=0, y=0),
                  effects: list[Effect] = [],
+                 components: list[Component] = [],
                  child: Entity,
                  ):
-        super().__init__(tag=tag, position=position, effects=effects, layout_effects=[])
+        super().__init__(tag=tag, position=position, effects=effects, components=components, layout_effects=[])
         self.child = child
 
-    def construct(self, canvas: Canvas):
+    def create(self, canvas: Canvas):
         self.canvas = canvas
-        self.child.construct(canvas)
+            
+        for component in self.components:
+            component.create(self)
+
+        self.child.create(canvas)
+
+    def destroy(self):
+        self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         self.child.paint(ctx, position)
@@ -55,17 +63,25 @@ class Padding(Entity):
                  effects: list[Effect] = [],
                  padding: EdgeInset,
                  layout_effects: list[LayoutEffect] = [],
+                 components: list[Component] = [],
                  child: Entity,
                  ):
-        super().__init__(tag=tag, position=position, effects=effects, layout_effects=layout_effects)
+        super().__init__(tag=tag, position=position, effects=effects, components=components, layout_effects=layout_effects)
         self.child = child
         self.state = PaddingState(padding=padding)
         self._state = self.state.copy()
         self._size = DefinedSize(width=0, height=0)
 
-    def construct(self, canvas: Canvas):
+    def create(self, canvas: Canvas):
         self.canvas = canvas
-        self.child.construct(canvas)
+        
+        for component in self.components:
+            component.create(self)
+
+        self.child.create(canvas)
+
+    def destroy(self):
+        self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = position.add(self.position)
@@ -101,14 +117,22 @@ class Center(Entity):
                  tag: str|None = None,
                  position: Position = Position(x=0, y=0),
                  effects: list[Effect] = [],
+                 components: list[Component] = [],
                  child: Entity,
                  ):
-        super().__init__(tag=tag, position=position, effects=effects, layout_effects=[])
+        super().__init__(tag=tag, position=position, effects=effects, components=components, layout_effects=[])
         self.child = child
     
-    def construct(self, canvas: Canvas):
+    def create(self, canvas: Canvas):
         self.canvas = canvas
-        self.child.construct(canvas)
+
+        for component in self.components:
+            component.create(self)
+
+        self.child.create(canvas)
+
+    def destroy(self):
+        self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)
@@ -132,15 +156,24 @@ class Stack(Entity):
                  position: Position = Position(x=0, y=0),
                  effects: list[Effect] = [],
                  layout_effects: list[LayoutEffect] = [],
+                 components: list[Component] = [],
                  children: list[Entity] = [],
                  ):
-        super().__init__(tag=tag, position=position, effects=effects, layout_effects=layout_effects)
+        super().__init__(tag=tag, position=position, effects=effects, layout_effects=layout_effects, components=components)
         self.children = children
 
-    def construct(self, canvas: Canvas):
+    def create(self, canvas: Canvas):
         self.canvas = canvas
+        
+        for component in self.components:
+            component.create(self)
+
         for child in self.children:
-            child.construct(canvas)
+            child.create(canvas)
+
+    def destroy(self):
+        for child in self.children:
+            child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)
@@ -187,19 +220,28 @@ class Flex(Entity):
                  direction: FlexDirection, 
                  effects: list[Effect] = [],
                  layout_effects: list[LayoutEffect]=[],
+                 components: list[Component] = [],
                  children: list[Entity] = []
                  ):
-        super().__init__(tag=tag, position=position, effects=effects, layout_effects=layout_effects)
+        super().__init__(tag=tag, position=position, effects=effects, layout_effects=layout_effects, components=components)
         self.children = children
         self.state = FlexState(direction=direction)
         self._state = self.state.copy()
         self.effects = effects
         self.layout_effects = layout_effects
 
-    def construct(self, canvas: Canvas):
+    def create(self, canvas: Canvas):
         self.canvas = canvas
+        
+        for component in self.components:
+            component.create(self)
+
         for child in self.children:
-            child.construct(canvas)
+            child.create(canvas)
+
+    def destroy(self):
+        for child in self.children:
+            child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)
@@ -283,16 +325,25 @@ class Expanded(Entity):
                  flex: int = 1,
                  effects: list[Effect] = [],
                  layout_effects: list[LayoutEffect]=[],
+                 components: list[Component] = [],
                  child: Entity|None = None
                  ):
-        super().__init__(tag=tag, position=position, effects=effects, layout_effects=layout_effects)
+        super().__init__(tag=tag, position=position, effects=effects, layout_effects=layout_effects, components=components)
         self.child = child
         self.state = ExpandState(flex=flex)
 
-    def construct(self, canvas: Canvas):
+    def create(self, canvas: Canvas):
         self.canvas = canvas
+        
+        for component in self.components:
+            component.create(self)
+
         if self.child is not None:
-            self.child.construct(canvas)
+            self.child.create(canvas)
+
+    def destroy(self):
+        if self.child is not None:
+            self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)

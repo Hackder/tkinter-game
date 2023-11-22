@@ -12,7 +12,7 @@ class Game:
         self.canvas.pack(fill="both", expand=True)
         self.scene = scene
         self.last_frame = timer()
-        scene.construct(self.canvas)
+        scene.create(self.canvas)
 
     def frame(self):
         now = timer()

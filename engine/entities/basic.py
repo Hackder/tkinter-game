@@ -1,3 +1,4 @@
+from __future__ import annotations
 import copy
 from abc import ABC, abstractmethod
 from tkinter import Canvas
@@ -5,26 +6,35 @@ from tkinter import Canvas
 from engine.models import FrameContext, Position, Size, DefinedSize, Constraints
 from engine.entities.effects import Effect, LayoutEffect
 
+class Component(ABC):
+    @abstractmethod
+    def create(self, entity: Entity):
+        pass
 
 class Entity(ABC):
-    id = 0
-    _size: DefinedSize = DefinedSize(width=0, height=0)
-
     @abstractmethod
     def __init__(self, *,
                  tag: str|None,
                  position: Position,
                  effects: list[Effect],
                  layout_effects: list[LayoutEffect],
+                 components: list[Component] = []
                  ):
+        self.id = 0
         self.tag = tag
         self.position = position
         self.effects = effects
         self.layout_effects = layout_effects
+        self.components = components
+        self._size = DefinedSize(width=0, height=0)
 
     @abstractmethod
-    def construct(self, canvas: Canvas):
-        self.canvas = canvas
+    def create(self, canvas: Canvas):
+        pass
+
+    @abstractmethod
+    def destroy(self):
+        pass
 
     @abstractmethod
     def paint(self, ctx: FrameContext, position: Position):
@@ -45,10 +55,14 @@ class RootScene:
         self.effects = effects
         self.children = children
 
-    def construct(self, canvas: Canvas):
+    def create(self, canvas: Canvas):
         self.canvas = canvas
         for child in self.children:
-            child.construct(canvas)
+            child.create(canvas)
+
+    def destroy(self):
+        for child in self.children:
+            child.destroy()
 
     def paint(self, ctx: FrameContext):
         for child in self.children:
@@ -87,11 +101,20 @@ class Rect(Entity):
         self._state = self.state.copy()
         self.child = child
 
-    def construct(self, canvas: Canvas):
+    def create(self, canvas: Canvas):
         self.canvas = canvas
         self.id = canvas.create_rectangle(0, 0, 0, 0)
+
+        for component in self.components:
+            component.create(self)
+
         if self.child is not None:
-            self.child.construct(canvas)
+            self.child.create(canvas)
+
+    def destroy(self):
+        self.canvas.delete(self.id)
+        if self.child is not None:
+            self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)
