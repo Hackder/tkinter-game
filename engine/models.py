@@ -1,6 +1,8 @@
 from __future__ import annotations
 import copy
 
+from engine.traits import Transitionable
+
 class FrameContext:
     def __init__(self, *, delta_time: float, width: float, height: float):
         self.delta_time = delta_time
@@ -35,7 +37,7 @@ class Size:
     def __repr__(self):
         return f"Size(width={self.width}, height={self.height})"
 
-class DefinedSize(Size):
+class DefinedSize(Size, Transitionable):
     def __init__(self, *, width: float, height: float):
         self.width = width
         self.height = height
@@ -51,7 +53,7 @@ class DefinedSize(Size):
         dh = self.height - other.height
         return max(abs(dw), abs(dh))
 
-    def lerp(self, other: DefinedSize, progress: float):
+    def interpolate(self, other: DefinedSize, progress: float):
         return DefinedSize(width=self.width + (other.width - self.width) * progress, height=self.height + (other.height - self.height) * progress)
 
     def __eq__(self, other: DefinedSize):
@@ -60,7 +62,7 @@ class DefinedSize(Size):
     def __repr__(self):
         return f"DefinedSize(width={self.width}, height={self.height})"
 
-class Position:
+class Position(Transitionable):
     def __init__(self, *, x: float, y: float):
         self.x = x
         self.y = y
@@ -77,7 +79,7 @@ class Position:
     def distance(self, other: Position):
         return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
 
-    def lerp(self, other: Position, progress: float):
+    def interpolate(self, other: Position, progress: float):
         return Position(x=self.x + (other.x - self.x) * progress, y=self.y + (other.y - self.y) * progress)
 
     def __eq__(self, other: Position):

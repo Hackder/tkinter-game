@@ -2,8 +2,9 @@ from __future__ import annotations
 from random import random
 from abc import ABC, abstractmethod
 from engine.models import Position, DefinedSize, FrameContext
+from engine.traits import Transitionable
 from engine.animation.utils import Easing
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 if TYPE_CHECKING:
     from engine.entities.basic import Entity
 
@@ -25,7 +26,7 @@ class LayoutEffect(ABC):
     def process(self, entity: Entity, ctx: FrameContext, state):
         pass
 
-class PositionTransition(Effect):
+class ObjectTransition(Effect, ABC):
     def __init__(self, *,
                  speed: float|None = None,
                  duration: float|None = 1,
@@ -34,24 +35,34 @@ class PositionTransition(Effect):
         self.speed = speed
         self.duration = duration
         self.skip = skip
-        self.last_position = None
-        self.target_position = None
-        self.position = None
+        self.last_value = None
+        self.target_value = None
+        self.value = None
         self.progress = 0
         self.distance = 0
         self.easing = easing
 
+    @abstractmethod
+    def selector(self, entity: Entity, ctx: FrameContext, position: Position, size: DefinedSize, state: object | None) -> Transitionable:
+        pass
+
+    @abstractmethod
+    def setter(self, entity: Entity, ctx: FrameContext, position: Position, size: DefinedSize, state: object | None, value: Transitionable):
+        pass
+
     def process(self, entity: Entity, ctx: FrameContext, position: Position, size: DefinedSize, state: object | None):
-        if self.last_position is None or self.position is None or self.target_position is None:
-            self.last_position = position
-            self.target_position = position
-            self.position = position
+        new_value = self.selector(entity, ctx, position, size, state)
+
+        if self.last_value is None or self.value is None or self.target_value is None:
+            self.last_value = new_value
+            self.target_value = new_value
+            self.value = new_value
             return
 
-        if position != self.target_position:
-            self.last_position = self.position
-            self.target_position = position.copy()
-            self.distance = position.distance(self.last_position)
+        if new_value != self.target_value:
+            self.last_value = self.value
+            self.target_value = new_value.copy()
+            self.distance = new_value.distance(self.last_value)
             self.progress = 0
             if self.skip is not None and self.distance > self.skip:
                 self.progress = 1
@@ -68,11 +79,40 @@ class PositionTransition(Effect):
 
         self.progress = min(self.progress, 1)
 
-        self.position = self.last_position.lerp(self.target_position, self.easing(self.progress))
+        self.value = self.last_value.interpolate(self.target_value, self.easing(self.progress))
 
-        position.x = self.position.x
-        position.y = self.position.y
-        
+        self.setter(entity, ctx, position, size, state, self.value)
+
+
+class PositionTransition(ObjectTransition):
+    def __init__(self, *,
+                 speed: float|None = None,
+                 duration: float|None = 1,
+                 skip: float|None = None,
+                 easing = Easing.linear):
+        super().__init__(speed=speed, duration=duration, skip=skip, easing=easing)
+
+    def selector(self, entity: Entity, ctx: FrameContext, position: Position, size: DefinedSize, state: object | None) -> Position:
+        return position
+
+    def setter(self, entity: Entity, ctx: FrameContext, position: Position, size: DefinedSize, state: object | None, value: Position):
+        position.x = value.x
+        position.y = value.y
+
+class SizeTransition(ObjectTransition):
+    def __init__(self, *,
+                 speed: float|None = None,
+                 duration: float|None = 1,
+                 skip: float|None = None,
+                 easing = Easing.linear):
+        super().__init__(speed=speed, duration=duration, skip=skip, easing=easing)
+
+    def selector(self, entity: Entity, ctx: FrameContext, position: Position, size: DefinedSize, state: object | None) -> DefinedSize:
+        return size
+
+    def setter(self, entity: Entity, ctx: FrameContext, position: Position, size: DefinedSize, state: object | None, value: DefinedSize):
+        size.width = value.width
+        size.height = value.height
 
 class SquareShake(Effect):
     def __init__(self, *, x_spread: float=10, y_spread: float=10, each: float=0.1):
@@ -93,50 +133,3 @@ class SquareShake(Effect):
         position.x += self.offset_x
         position.y += self.offset_y
 
-class SizeTransition(Effect):
-    def __init__(self, *,
-                 speed: float|None = None,
-                 duration: float|None = 1,
-                 skip: float|None = None,
-                 easing = Easing.linear):
-        self.speed = speed
-        self.duration = duration
-        self.skip = skip
-        self.last_size = None
-        self.target_size = None
-        self.size = None
-        self.progress = 0
-        self.distance = 0
-        self.easing = easing
-
-    def process(self, entity: Entity, ctx: FrameContext, position: Position, size: DefinedSize, state: object | None):
-        if self.last_size is None or self.size is None or self.target_size is None:
-            self.last_size = size
-            self.target_size = size
-            self.size = size
-            return
-
-        if size != self.target_size:
-            self.last_size = self.size
-            self.target_size = size.copy()
-            self.distance = size.distance(self.last_size)
-            self.progress = 0
-            if self.skip is not None and self.distance > self.skip:
-                self.progress = 1
-
-        if self.progress == 1 or self.distance == 0:
-            return
-
-        if self.speed is not None:
-            self.progress += self.speed / self.distance * ctx.delta_time
-        elif self.duration is not None:
-            self.progress += ctx.delta_time / self.duration
-        else:
-            raise Exception('Either speed or duration must be set')
-
-        self.progress = min(self.progress, 1)
-
-        self.size = self.last_size.lerp(self.target_size, self.easing(self.progress))
-
-        size.width = self.size.width
-        size.height = self.size.height

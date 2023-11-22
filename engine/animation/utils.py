@@ -91,4 +91,66 @@ class Animation:
 
         return self.easing(self.state)
 
+class Transition:
+    """
+    A utility class for transitioning one float value to another
+
+    Keyword arguments:
+    speed -- The speed of the transition in units per second
+    duration -- The duration of the transition in seconds
+    skip -- If the change in value is greated than skip,
+            no transitioning will happen and the value will be set immediately
+    easing -- The easing function to use
+
+    At least one of speed or duration must be set
+    """
+    def __init__(self, *,
+                 speed: float|None = None,
+                 duration: float|None = 1,
+                 skip: float|None = None,
+                 easing = Easing.linear):
+        self.speed = speed
+        self.duration = duration
+        self.skip = skip
+        self.last_value = None
+        self.target_value = None
+        self.value = None
+        self.progress = 0
+        self.distance = 0
+        self.easing = easing
+
+    def update(self, value: float, delta_time: float):
+        # The first time the transition is updated no transitioning
+        # is being done, so we just update the values to reflect the 
+        # target at the initial state/value
+        if self.last_value is None or self.value is None or self.target_value is None:
+            self.last_value = value
+            self.target_value = value
+            self.value = value
+            return value
+
+        if value != self.target_value:
+            self.last_value = self.value
+            self.target_value = value
+            self.distance = value - self.last_value
+            self.progress = 0
+            if self.skip is not None and self.distance > self.skip:
+                self.progress = 1
+
+        if self.progress == 1 or self.distance == 0:
+            return value
+
+        if self.speed is not None:
+            self.progress += self.speed / self.distance * delta_time
+        elif self.duration is not None:
+            self.progress += delta_time / self.duration
+        else:
+            raise Exception('Either speed or duration must be set')
+
+        self.progress = min(self.progress, 1)
+
+        eased_progress = self.easing(self.progress)
+        self.value = self.last_value + self.distance * eased_progress
+
+        return (self.value, eased_progress)
 
