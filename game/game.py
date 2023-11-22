@@ -1,10 +1,13 @@
+from tkinter import Canvas
+import copy
+
 from engine.animation.utils import Animation, AnimationDirection, AnimationEnd, Easing
-from engine.entities.basic import Rect, RootScene, Text
+from engine.entities.basic import Entity, Rect, RootScene, Text
 from engine.entities.components.base import Component
 from engine.entities.components.debug import DebugBounds, FpsCounter
 from engine.entities.components.effects import PositionTransition, SquareShake, SizeLayoutTransition
 from engine.entities.layout import Center, Flex, FlexDirection, ScreenSizeLayout, Padding, EdgeInset, Stack, Expanded
-from engine.models import Size, Position
+from engine.models import Size, Position, FrameContext, Constraints
 from engine.game import Game
 
 class PaddingEffect(Component):
@@ -42,29 +45,107 @@ class ChangeSize(Component):
         else:
             self.entity.state.size.width = 200
 
+class EntitySwitcherState:
+    def __init__(self, current: int = 0):
+        self.current = current
+
+    def copy(self):
+        return copy.copy(self)
+
+
+class EntitySwitcher(Entity):
+    state: EntitySwitcherState
+
+    def __init__(self, *, tag: str|None = None,
+                 position: Position = Position(x=0, y=0),
+                 current: int = 0,
+                 components: list[Component] = [],
+                 entities: list[Entity]):
+        super().__init__(tag=tag, position=position, components=components)
+        self.state = EntitySwitcherState(current=current)
+        self.last_curr = current
+        self._state = self.state.copy()
+        self.entities = entities
+        self._size = Size(width=0, height=0)
+
+    def create(self, canvas: Canvas):
+        self.canvas = canvas
+        for component in self.components:
+            component.create(self)
+
+        self.entities[self.state.current].create(canvas)
+
+    def destroy(self):
+        for component in self.components:
+            component.destroy(self)
+
+        self.entities[self.state.current].destroy()
+
+    def paint(self, ctx: FrameContext, position: Position):
+        for component in self.components:
+            component.before_paint(self, ctx, position, self._size, self._state)
+
+        if self._state.current != self.last_curr:
+            curr = self.entities[self.state.current]
+            last = self.entities[self.last_curr]
+            curr.create(self.canvas)
+            self.canvas.tag_raise(curr.id, last.id)
+            last.destroy()
+            self.last_curr = self.state.current
+
+        self.entities[self._state.current].paint(ctx, position)
+
+    def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
+        state = self.state.copy()
+        for component in self.components:
+            component.before_layout(self, ctx, state)
+
+        self._state = state
+
+        child_size = self.entities[state.current].layout(ctx, constraints)
+        self.entities[state.current]._size = child_size
+
+        return child_size
+
+class SwitchOnClick(Component):
+    def create(self, entity):
+        self.entity = entity
+        entity.canvas.bind('<Button-1>', self.click)
+
+    def click(self, e):
+        self.entity.state.current = (self.entity.state.current + 1) % len(self.entity.entities)
+
 scene = RootScene(
         children=[
             ScreenSizeLayout(
                 child=Center(
                     child=Stack(
                         children=[
-                            Rect(
-                                size=Size(width=150, height=70),
-                                fill='gray',
+                            EntitySwitcher(
                                 components=[
-                                    SquareShake(),
-                                    PositionTransition(speed=100, skip=100)
+                                    SwitchOnClick()
                                     ],
-                                ),
-                            Rect(
-                                position=Position(x=100, y=150),
-                                size=Size(width=150, height=70),
-                                fill='red',
-                                components=[
-                                    SquareShake(),
-                                    PositionTransition(duration=.1)
-                                    ],
-                                ),
+                                entities=[
+                                    Rect(
+                                        size=Size(width=150, height=70),
+                                        fill='gray',
+                                        components=[
+                                            SquareShake(),
+                                            PositionTransition(speed=100, skip=100),
+                                            DebugBounds(color='blue'),
+                                            ],
+                                        ),
+                                    Rect(
+                                        position=Position(x=100, y=150),
+                                        size=Size(width=150, height=70),
+                                        fill='red',
+                                        components=[
+                                            SquareShake(),
+                                            PositionTransition(duration=.1)
+                                            ],
+                                        ),
+                                    ]
+                                )
                             ]
                         )
                     )
@@ -100,13 +181,15 @@ scene = RootScene(
                         ],
                     padding=EdgeInset.all(20),
                     child=Stack(
-                        children=[Text(
-                        components=[
-                            FpsCounter(),
-                            DebugBounds()
-                            ],
-                        text="Hello world"
-                        )]
+                        children=[
+                            Text(
+                                components=[
+                                    FpsCounter(),
+                                    DebugBounds()
+                                    ],
+                                text="Hello world"
+                                )
+                            ]
                         ),
                     )
                 )

@@ -28,15 +28,21 @@ class FpsCounter(Component):
         state.text = self.text
 
 class DebugBounds(Component):
+    def __init__(self, *, color: str = 'red'):
+        self.color = color
+
     def create(self, entity):
-        self.id = entity.canvas.create_rectangle(0, 0, 0, 0, outline='red', width=1)
-        self.text_id = entity.canvas.create_text(0, 0, text='', fill='red', anchor='sw', font=('Arial', 10))
+        self.id = entity.canvas.create_rectangle(0, 0, 0, 0, outline=self.color, width=1)
+        self.text_id = entity.canvas.create_text(0, 0, text='', fill=self.color, anchor='sw', font=('Arial', 10))
 
     def destroy(self, entity: Entity):
         entity.canvas.delete(self.id)
         entity.canvas.delete(self.text_id)
 
     def before_paint(self, entity: Entity, ctx: FrameContext, position: Position, size: Size, state: Any | None):
+        entity.canvas.tag_raise(self.id)
+        entity.canvas.tag_raise(self.text_id)
         entity.canvas.coords(self.id, position.x, position.y, position.x + size.width, position.y + size.height)
+        entity.canvas.itemconfig(self.id, outline=self.color)
         entity.canvas.coords(self.text_id, position.x, position.y)
-        entity.canvas.itemconfig(self.text_id, text=f'{entity.__class__.__name__} (tag={entity.tag}) {size.width:.2f}x{size.height:.2f}')
+        entity.canvas.itemconfig(self.text_id, text=f'{entity.__class__.__name__} (tag={entity.tag}) {size.width:.2f}x{size.height:.2f}', fill=self.color)
