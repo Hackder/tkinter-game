@@ -15,29 +15,7 @@ class FrameContext:
     def __eq__(self, other):
         return self.delta_time == other.delta_time
 
-class Size:
-    def __init__(self, *, width: float|None, height: float|None):
-        self.width = width
-        self.height = height
-
-    @staticmethod
-    def unbounded():
-        return Size(width=None, height=None)
-
-    def copy(self):
-        return copy.copy(self)
-
-    def max(self, other: Size):
-        return Size(
-                width=max(self.width, other.width) if self.width is not None and other.width is not None else None,
-                height=max(self.height, other.height) if self.height is not None and other.height is not None else None
-                )
-    
-
-    def __repr__(self):
-        return f"Size(width={self.width}, height={self.height})"
-
-class DefinedSize(Size, Transitionable):
+class Size(Transitionable):
     def __init__(self, *, width: float, height: float):
         self.width = width
         self.height = height
@@ -45,22 +23,22 @@ class DefinedSize(Size, Transitionable):
     def copy(self):
         return copy.deepcopy(self)
 
-    def max(self, other: DefinedSize):
-        return DefinedSize(width=max(self.width, other.width), height=max(self.height, other.height))
+    def max(self, other: Size):
+        return Size(width=max(self.width, other.width), height=max(self.height, other.height))
 
-    def distance(self, other: DefinedSize):
+    def distance(self, other: Size):
         dw = self.width - other.width
         dh = self.height - other.height
         return max(abs(dw), abs(dh))
 
-    def interpolate(self, other: DefinedSize, progress: float):
-        return DefinedSize(width=self.width + (other.width - self.width) * progress, height=self.height + (other.height - self.height) * progress)
+    def interpolate(self, other: Size, progress: float):
+        return Size(width=self.width + (other.width - self.width) * progress, height=self.height + (other.height - self.height) * progress)
 
-    def __eq__(self, other: DefinedSize):
+    def __eq__(self, other: Size):
         return self.width == other.width and self.height == other.height
 
     def __repr__(self):
-        return f"DefinedSize(width={self.width}, height={self.height})"
+        return f"Size(width={self.width}, height={self.height})"
 
 class Position(Transitionable):
     def __init__(self, *, x: float, y: float):
@@ -115,11 +93,11 @@ class Constraints:
 
         return min(self.max_height, max(self.min_height, height))
 
-    def to_max_defined_size(self) -> DefinedSize:
-        return DefinedSize(width=self.max_width, height=self.max_height)
+    def to_max_size(self) -> Size:
+        return Size(width=self.max_width, height=self.max_height)
 
-    def fit_size(self, size: Size) -> DefinedSize:
-        return DefinedSize(width=self.fit_width(size.width), height=self.fit_height(size.height))
+    def fit_size(self, size: Size) -> Size:
+        return Size(width=self.fit_width(size.width), height=self.fit_height(size.height))
 
     def with_min(self, min_width: float, min_height: float):
         return Constraints(min_width=min_width, min_height=min_height, max_width=self.max_width, max_height=self.max_height)

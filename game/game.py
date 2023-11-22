@@ -1,18 +1,22 @@
 from engine.animation.utils import Animation, AnimationDirection, AnimationEnd, Easing
-from engine.debug.entities import FpsCounter
-from engine.entities.basic import Rect, RootScene
-from engine.entities.effects import LayoutEffect, PositionTransition, SizeTransition, SquareShake
+from engine.entities.basic import Rect, RootScene, Text
+from engine.entities.components.base import Component
+from engine.entities.components.debug import DebugBounds, FpsCounter
+from engine.entities.components.effects import PositionTransition, SquareShake, SizeLayoutTransition
 from engine.entities.layout import Center, Flex, FlexDirection, ScreenSizeLayout, Padding, EdgeInset, Stack, Expanded
 from engine.models import Size, Position
 from engine.game import Game
 
-class PaddingEffect(LayoutEffect):
+class PaddingEffect(Component):
     def __init__(self, *, start: float, end: float, duration: float, repeat_times: int = 0):
         self.start = start
         self.end = end
         self.anim = Animation(duration=duration, direction=AnimationDirection.Alternate, repeat_times=repeat_times, end=AnimationEnd.End)
 
-    def process(self, entity, ctx, state):
+    def before_layout(self, entity, ctx, state):
+        if state is None or not hasattr(state, 'padding'):
+            raise Exception('PaddingEffect component must be on an entity which supports padding')
+
         value = self.anim.process(ctx.delta_time)
 
         state.padding.left += value * (self.end - self.start) + self.start
@@ -21,11 +25,22 @@ class PaddingEffect(LayoutEffect):
         state.padding.bottom += value * (self.end - self.start) + self.start
 
         if self.anim.done:
-            entity.layout_effects.remove(self)
+            entity.components.remove(self)
             entity.state.padding.left += value * (self.end - self.start) + self.start # type: ignore
             entity.state.padding.right += value * (self.end - self.start) + self.start # type: ignore
             entity.state.padding.top += value * (self.end - self.start) + self.start # type: ignore
             entity.state.padding.bottom += value * (self.end - self.start) + self.start # type: ignore
+
+class ChangeSize(Component):
+    def create(self, entity):
+        self.entity = entity
+        entity.canvas.tag_bind(entity.id, '<Button-1>', self.click)
+
+    def click(self, e):
+        if self.entity.state.size.width == 200:
+            self.entity.state.size.width = 100
+        else:
+            self.entity.state.size.width = 200
 
 scene = RootScene(
         children=[
@@ -36,7 +51,7 @@ scene = RootScene(
                             Rect(
                                 size=Size(width=150, height=70),
                                 fill='gray',
-                                effects=[
+                                components=[
                                     SquareShake(),
                                     PositionTransition(speed=100, skip=100)
                                     ],
@@ -45,7 +60,7 @@ scene = RootScene(
                                 position=Position(x=100, y=150),
                                 size=Size(width=150, height=70),
                                 fill='red',
-                                effects=[
+                                components=[
                                     SquareShake(),
                                     PositionTransition(duration=.1)
                                     ],
@@ -64,17 +79,14 @@ scene = RootScene(
                             Rect(
                                 size=Size(width=150, height=70),
                                 fill='gray',
-                                effects=[
-                                    SizeTransition(speed=100),
-                                    PositionTransition(speed=50)
+                                components=[
+                                    ChangeSize(),
+                                    SizeLayoutTransition(speed=100),
                                     ]
                                 ),
                             Rect(
                                 size=Size(width=150, height=70),
                                 fill='red',
-                                effects=[
-                                    PositionTransition(speed=50)
-                                    ]
                                 ),
                             Expanded(),
                             ]
@@ -83,11 +95,19 @@ scene = RootScene(
                 ),
             ScreenSizeLayout(
                 child=Padding(
-                    layout_effects=[
+                    components=[
                         PaddingEffect(start=0, end=20, duration=1, repeat_times=3)
                         ],
                     padding=EdgeInset.all(20),
-                    child=FpsCounter()
+                    child=Stack(
+                        children=[Text(
+                        components=[
+                            FpsCounter(),
+                            DebugBounds()
+                            ],
+                        text="Hello world"
+                        )]
+                        ),
                     )
                 )
             ]
@@ -95,13 +115,3 @@ scene = RootScene(
 
 game = Game(800, 600, scene)
 
-def click(e):
-    # game.scene.children[0].child.child.children[0].position.x = 100
-    entity = game.scene.children[1].child.child.children[1]
-    if entity.state.size.width == 200:
-        entity.state.size.width = 100
-    else:
-        entity.state.size.width = 200
-    
-
-game.canvas.bind('<Button-1>', click)
