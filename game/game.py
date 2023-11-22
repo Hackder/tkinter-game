@@ -54,10 +54,10 @@ class ChangeColor(Component):
         entity.canvas.tag_bind(entity.id, '<Button-1>', self.click, add='+')
 
     def click(self, e):
-        if self.entity.state.fill.r == 255:
-            self.entity.state.fill = Color.black()
+        if self.entity.state.fill == Color.yellow():
+            self.entity.state.fill = Color.gray()
         else:
-            self.entity.state.fill = Color.white()
+            self.entity.state.fill = Color.yellow()
 
 class EntitySwitcherState:
     def __init__(self, current: int = 0):
@@ -135,11 +135,15 @@ scene = RootScene(
                     child=Padding(
                         padding=EdgeInset.all(20),
                         child=Center(
-                            child=Sprite(
-                                components=[
-                                    DebugBounds()
-                                    ],
-                                asset_key="small"
+                            # child=Sprite(
+                            #     size=Size(width=400, height=400),
+                            #     components=[
+                            #         DebugBounds()
+                            #         ],
+                            #     asset_key="hero2"
+                            #     )
+                            child=Rect(
+                                fill=Color.from_hex('#ADD8E6'),
                                 )
                             )
                         )
@@ -237,5 +241,6 @@ scene = RootScene(
 
 game = Game(800, 600, scene)
 game.asset_manager.register('hero', Asset(AssetType.Still, 'assets/hero.png'))
+game.asset_manager.register('hero2', Asset(AssetType.Still, 'assets/hero.jpg'))
 game.asset_manager.register('small', Asset(AssetType.Still, 'assets/small.png', Resampling.NEAREST))
 

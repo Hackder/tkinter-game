@@ -254,9 +254,8 @@ class Sprite(Entity):
         for effect in self.components:
             effect.before_paint(self, ctx, pos, self._size, self._state)
         
-
-        self.canvas.coords(self.id, pos.x, pos.y)
         asset = ctx.asset_manager.get(self._state.asset_key, self._size.width, self._size.height)
+        self.canvas.coords(self.id, pos.x, pos.y)
         self.canvas.itemconfigure(self.id, image=asset)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:

@@ -148,6 +148,10 @@ class Color(Transitionable):
         return ((y - oy) ** 2 + (i - oi) ** 2 + (q - oq) ** 2) ** 0.5
 
     @staticmethod
+    def from_hex(hex: str) -> Color:
+        return Color(r=int(hex[1:3], 16), g=int(hex[3:5], 16), b=int(hex[5:7], 16))
+
+    @staticmethod
     def from_hls(h: float, l: float, s: float) -> Color:
         r, g, b = colorsys.hls_to_rgb(h, l, s)
         return Color(r=round(r * 255), g=round(g * 255), b=round(b * 255))
@@ -180,4 +184,8 @@ class Color(Transitionable):
     @staticmethod
     def gray() -> Color:
         return Color(r=128, g=128, b=128)
+
+    @staticmethod
+    def yellow() -> Color:
+        return Color(r=255, g=255, b=0)
 
