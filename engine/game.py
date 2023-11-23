@@ -31,5 +31,5 @@ class Game:
 
     def start(self):
         self.last_frame = timer()
-        self.root.after(16, self.frame)
+        self.root.after_idle(self.frame)
         self.root.mainloop()
