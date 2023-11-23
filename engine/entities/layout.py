@@ -6,19 +6,22 @@ from engine.entities.components.base import Component
 from engine.models import FrameContext, Size, Constraints, Position
 from engine.entities.basic import Entity
 
+
 class ScreenSizeLayout(Entity):
-    def __init__(self, *,
-                 tag: str|None = None,
-                 position: Position = Position(x=0, y=0),
-                 components: list[Component] = [],
-                 child: Entity,
-                 ):
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        components: list[Component] = [],
+        child: Entity,
+    ):
         super().__init__(tag=tag, position=position, components=components)
         self.child = child
 
     def create(self, canvas: Canvas):
         self.canvas = canvas
-            
+
         for component in self.components:
             component.create(self)
 
@@ -33,11 +36,17 @@ class ScreenSizeLayout(Entity):
         self.child.paint(ctx, position)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
-        constraints = Constraints(min_width=ctx.width, min_height=ctx.height, max_width=ctx.width, max_height=ctx.height)
+        constraints = Constraints(
+            min_width=ctx.width,
+            min_height=ctx.height,
+            max_width=ctx.width,
+            max_height=ctx.height,
+        )
 
         self.child._size = self.child.layout(ctx, constraints)
 
         return Size(width=ctx.width, height=ctx.height)
+
 
 class EdgeInset:
     def __init__(self, top: float, right: float, bottom: float, left: float):
@@ -61,6 +70,7 @@ class EdgeInset:
     def copy(self):
         return copy.copy(self)
 
+
 class PaddingState:
     def __init__(self, padding: EdgeInset):
         self.padding = padding
@@ -68,14 +78,17 @@ class PaddingState:
     def copy(self):
         return copy.deepcopy(self)
 
+
 class Padding(Entity):
-    def __init__(self, *,
-                 tag: str|None = None,
-                 position: Position = Position(x=0, y=0),
-                 padding: EdgeInset,
-                 components: list[Component] = [],
-                 child: Entity,
-                 ):
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        padding: EdgeInset,
+        components: list[Component] = [],
+        child: Entity,
+    ):
         super().__init__(tag=tag, position=position, components=components)
         self.child = child
         self.state = PaddingState(padding=padding)
@@ -84,7 +97,7 @@ class Padding(Entity):
 
     def create(self, canvas: Canvas):
         self.canvas = canvas
-        
+
         for component in self.components:
             component.create(self)
 
@@ -101,13 +114,15 @@ class Padding(Entity):
         for component in self.components:
             component.before_paint(self, ctx, pos, self._size, self._state)
 
-        child_position = Position(x=pos.x + self._state.padding.left, y=pos.y + self._state.padding.top)
+        child_position = Position(
+            x=pos.x + self._state.padding.left, y=pos.y + self._state.padding.top
+        )
         self.child.paint(ctx, child_position)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         state = self.state.copy()
         for component in self.components:
-            component.before_layout(self,ctx, state)
+            component.before_layout(self, ctx, state)
         self._state = state
 
         c = constraints.copy()
@@ -122,18 +137,23 @@ class Padding(Entity):
         child_size = self.child.layout(ctx, c)
         self.child._size = child_size
 
-        return Size(width=child_size.width + x_padding, height=child_size.height + y_padding)
+        return Size(
+            width=child_size.width + x_padding, height=child_size.height + y_padding
+        )
+
 
 class Center(Entity):
-    def __init__(self, *,
-                 tag: str|None = None,
-                 position: Position = Position(x=0, y=0),
-                 components: list[Component] = [],
-                 child: Entity,
-                 ):
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        components: list[Component] = [],
+        child: Entity,
+    ):
         super().__init__(tag=tag, position=position, components=components)
         self.child = child
-    
+
     def create(self, canvas: Canvas):
         self.canvas = canvas
 
@@ -153,8 +173,10 @@ class Center(Entity):
         for component in self.components:
             component.before_paint(self, ctx, pos, self._size, None)
 
-        child_position = Position(x=pos.x + (self._size.width - self.child._size.width) / 2,
-                                  y=pos.y + (self._size.height - self.child._size.height) / 2)
+        child_position = Position(
+            x=pos.x + (self._size.width - self.child._size.width) / 2,
+            y=pos.y + (self._size.height - self.child._size.height) / 2,
+        )
 
         self.child.paint(ctx, child_position)
 
@@ -165,18 +187,20 @@ class Center(Entity):
 
 
 class Stack(Entity):
-    def __init__(self, *,
-                 tag: str|None = None,
-                 position: Position = Position(x=0, y=0),
-                 components: list[Component] = [],
-                 children: list[Entity] = [],
-                 ):
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        components: list[Component] = [],
+        children: list[Entity] = [],
+    ):
         super().__init__(tag=tag, position=position, components=components)
         self.children = children
 
     def create(self, canvas: Canvas):
         self.canvas = canvas
-        
+
         for component in self.components:
             component.create(self)
 
@@ -202,7 +226,7 @@ class Stack(Entity):
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         constraints = constraints.force_max()
 
-        for component in self.components: 
+        for component in self.components:
             component.before_layout(self, ctx, None)
 
         for child in self.children:
@@ -210,19 +234,22 @@ class Stack(Entity):
 
         return constraints.to_max_size()
 
+
 class Scene(Entity):
-    def __init__(self, *,
-                 tag: str|None = None,
-                 position: Position = Position(x=0, y=0),
-                 components: list[Component] = [],
-                 children: list[Entity] = [],
-                 ):
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        components: list[Component] = [],
+        children: list[Entity] = [],
+    ):
         super().__init__(tag=tag, position=position, components=components)
         self.children = children
 
     def create(self, canvas: Canvas):
         self.canvas = canvas
-        
+
         for component in self.components:
             component.create(self)
 
@@ -257,15 +284,17 @@ class Scene(Entity):
 
         return Size(width=max_w, height=max_h)
 
+
 class FlexDirection(StrEnum):
-    Row = 'Row'
-    Column = 'Column'
+    Row = "Row"
+    Column = "Column"
 
     def __repr__(self):
         if self == FlexDirection.Row:
-            return 'Row'
+            return "Row"
         elif self == FlexDirection.Column:
-            return 'Column'
+            return "Column"
+
 
 class FlexState:
     def __init__(self, *, direction: FlexDirection, gap: float):
@@ -275,15 +304,18 @@ class FlexState:
     def copy(self):
         return copy.deepcopy(self)
 
+
 class Flex(Entity):
-    def __init__(self, *,
-                 tag:str|None=None,
-                 position: Position = Position(x=0, y=0), 
-                 direction: FlexDirection, 
-                 gap: float = 0,
-                 components: list[Component] = [],
-                 children: list[Entity] = []
-                 ):
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        direction: FlexDirection,
+        gap: float = 0,
+        components: list[Component] = [],
+        children: list[Entity] = [],
+    ):
         super().__init__(tag=tag, position=position, components=components)
         self.children = children
         self.state = FlexState(direction=direction, gap=gap)
@@ -291,7 +323,7 @@ class Flex(Entity):
 
     def create(self, canvas: Canvas):
         self.canvas = canvas
-        
+
         for component in self.components:
             component.create(self)
 
@@ -320,7 +352,7 @@ class Flex(Entity):
                 pos.y += self._state.gap
 
     def is_flex_child(self, child: Entity) -> bool:
-        return hasattr(child, 'state') and hasattr(child.state, 'flex') and child.state.flex != 0 # type: ignore
+        return hasattr(child, "state") and hasattr(child.state, "flex") and child.state.flex != 0  # type: ignore
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         state = self.state.copy()
@@ -338,7 +370,7 @@ class Flex(Entity):
 
         for child in self.children:
             if self.is_flex_child(child):
-                flex_total += child.state.flex # type: ignore
+                flex_total += child.state.flex  # type: ignore
                 continue
 
             if state.direction == FlexDirection.Row:
@@ -360,17 +392,17 @@ class Flex(Entity):
         main_size = specific_children_size
 
         for child in self.children:
-            if not self.is_flex_child(child): # type: ignore
+            if not self.is_flex_child(child):  # type: ignore
                 continue
 
             c = copy.copy(constraints)
 
             if state.direction == FlexDirection.Row:
-                c.max_width = rest * child.state.flex / flex_total # type: ignore
+                c.max_width = rest * child.state.flex / flex_total  # type: ignore
                 child._size = child.layout(ctx, c)
                 main_size = constraints.max_width
             else:
-                c.max_height = rest * child.state.flex / flex_total # type: ignore
+                c.max_height = rest * child.state.flex / flex_total  # type: ignore
                 child._size = child.layout(ctx, c)
                 main_size = constraints.max_height
 
@@ -379,6 +411,7 @@ class Flex(Entity):
         else:
             return Size(width=max_cross, height=main_size)
 
+
 class ExpandState:
     def __init__(self, *, flex: int):
         self.flex = flex
@@ -386,21 +419,24 @@ class ExpandState:
     def copy(self):
         return copy.deepcopy(self)
 
+
 class Expanded(Entity):
-    def __init__(self, *,
-                 tag:str|None=None,
-                 position: Position = Position(x=0, y=0), 
-                 flex: int = 1,
-                 components: list[Component] = [],
-                 child: Entity|None = None
-                 ):
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        flex: int = 1,
+        components: list[Component] = [],
+        child: Entity | None = None,
+    ):
         super().__init__(tag=tag, position=position, components=components)
         self.child = child
         self.state = ExpandState(flex=flex)
 
     def create(self, canvas: Canvas):
         self.canvas = canvas
-        
+
         for component in self.components:
             component.create(self)
 
@@ -427,4 +463,3 @@ class Expanded(Entity):
             self.child._size = self.child.layout(ctx, constraints)
 
         return constraints.to_max_size()
-

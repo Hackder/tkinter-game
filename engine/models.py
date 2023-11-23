@@ -6,8 +6,16 @@ import colorsys
 from engine.assets import AssetManader
 from engine.traits import Transitionable
 
+
 class FrameContext:
-    def __init__(self, *, delta_time: float, width: float, height: float, asset_manager: AssetManader):
+    def __init__(
+        self,
+        *,
+        delta_time: float,
+        width: float,
+        height: float,
+        asset_manager: AssetManader,
+    ):
         self.delta_time = delta_time
         self.width = width
         self.height = height
@@ -19,6 +27,7 @@ class FrameContext:
     def __eq__(self, other):
         return self.delta_time == other.delta_time
 
+
 class Size(Transitionable):
     def __init__(self, *, width: float, height: float):
         self.width = width
@@ -28,7 +37,9 @@ class Size(Transitionable):
         return copy.deepcopy(self)
 
     def max(self, other: Size):
-        return Size(width=max(self.width, other.width), height=max(self.height, other.height))
+        return Size(
+            width=max(self.width, other.width), height=max(self.height, other.height)
+        )
 
     def distance(self, other: Size):
         dw = self.width - other.width
@@ -36,13 +47,17 @@ class Size(Transitionable):
         return max(abs(dw), abs(dh))
 
     def interpolate(self, other: Size, progress: float):
-        return Size(width=self.width + (other.width - self.width) * progress, height=self.height + (other.height - self.height) * progress)
+        return Size(
+            width=self.width + (other.width - self.width) * progress,
+            height=self.height + (other.height - self.height) * progress,
+        )
 
     def __eq__(self, other: Size):
         return self.width == other.width and self.height == other.height
 
     def __repr__(self):
         return f"Size(width={self.width}, height={self.height})"
+
 
 class Position(Transitionable):
     def __init__(self, *, x: float, y: float):
@@ -62,21 +77,27 @@ class Position(Transitionable):
         return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
 
     def interpolate(self, other: Position, progress: float):
-        return Position(x=self.x + (other.x - self.x) * progress, y=self.y + (other.y - self.y) * progress)
+        return Position(
+            x=self.x + (other.x - self.x) * progress,
+            y=self.y + (other.y - self.y) * progress,
+        )
 
     def __eq__(self, other: Position):
         return self.x == other.x and self.y == other.y
 
     def __repr__(self):
         return f"Position(x={self.x}, y={self.y})"
-        
+
+
 class Constraints:
-    def __init__(self, *,
-                 min_width: float,
-                 min_height: float,
-                 max_width: float,
-                 max_height: float
-                 ):
+    def __init__(
+        self,
+        *,
+        min_width: float,
+        min_height: float,
+        max_width: float,
+        max_height: float,
+    ):
         self.min_width = min_width
         self.min_height = min_height
         self.max_width = max_width
@@ -85,13 +106,13 @@ class Constraints:
     def copy(self):
         return copy.copy(self)
 
-    def fit_width(self, width: float|None):
+    def fit_width(self, width: float | None):
         if width is None:
             return self.max_width
 
         return min(self.max_width, max(self.min_width, width))
 
-    def fit_height(self, height: float|None):
+    def fit_height(self, height: float | None):
         if height is None:
             return self.max_height
 
@@ -100,25 +121,43 @@ class Constraints:
     def to_max_size(self) -> Size:
         return Size(width=self.max_width, height=self.max_height)
 
-    def fit_size(self, size: Size|None) -> Size:
+    def fit_size(self, size: Size | None) -> Size:
         if size is None:
             return Size(width=self.max_width, height=self.max_height)
-        return Size(width=self.fit_width(size.width), height=self.fit_height(size.height))
+        return Size(
+            width=self.fit_width(size.width), height=self.fit_height(size.height)
+        )
 
     def with_min(self, min_width: float, min_height: float):
-        return Constraints(min_width=min_width, min_height=min_height, max_width=self.max_width, max_height=self.max_height)
+        return Constraints(
+            min_width=min_width,
+            min_height=min_height,
+            max_width=self.max_width,
+            max_height=self.max_height,
+        )
 
     def force_max(self):
-        return Constraints(min_width=self.max_width, min_height=self.max_height, max_width=self.max_width, max_height=self.max_height)
+        return Constraints(
+            min_width=self.max_width,
+            min_height=self.max_height,
+            max_width=self.max_width,
+            max_height=self.max_height,
+        )
 
     def limit(self, size: Size | None) -> Constraints:
         if size is None:
             return self
 
-        return Constraints(min_width=self.min_width, min_height=self.min_height, max_width=size.width, max_height=size.height)
+        return Constraints(
+            min_width=self.min_width,
+            min_height=self.min_height,
+            max_width=size.width,
+            max_height=size.height,
+        )
 
     def __repr__(self):
         return f"Constraints(min_width={self.min_width}, min_height={self.min_height}, max_width={self.max_width}, max_height={self.max_height})"
+
 
 @dataclass
 class Color(Transitionable):
@@ -141,9 +180,9 @@ class Color(Transitionable):
     def interpolate(self, other: Color, progress: float) -> Color:
         y, i, q = self.to_yiq()
         oy, oi, oq = other.to_yiq()
-        return Color.from_yiq(y + (oy - y) * progress,
-                              i + (oi- i) * progress,
-                              q + (oq - q) * progress)
+        return Color.from_yiq(
+            y + (oy - y) * progress, i + (oi - i) * progress, q + (oq - q) * progress
+        )
 
     def distance(self, other: Color) -> float:
         y, i, q = self.to_yiq()
@@ -191,4 +230,3 @@ class Color(Transitionable):
     @staticmethod
     def yellow() -> Color:
         return Color(r=255, g=255, b=0)
-

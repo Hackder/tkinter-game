@@ -1,27 +1,52 @@
-from tkinter import Canvas
 import copy
-
+import os
+from tkinter import Canvas
 from PIL.Image import Resampling
 
 from engine.animation.utils import Animation, AnimationDirection, AnimationEnd, Easing
 from engine.assets import Asset, AssetType
 from engine.entities.basic import Entity, Rect, RootScene, Sprite, Text
 from engine.entities.components.base import Component
-from engine.entities.components.debug import DebugBounds, FpsCounter, AssetLoaderStats, PrintLifecycle
-from engine.entities.components.effects import FillTransition, PositionTransition, SquareShake, SizeLayoutTransition
-from engine.entities.layout import Center, Flex, FlexDirection, Scene, ScreenSizeLayout, Padding, EdgeInset, Stack, Expanded
+from engine.entities.components.debug import (
+    DebugBounds,
+    FpsCounter,
+    AssetLoaderStats,
+)
+from engine.entities.components.effects import (
+    FillTransition,
+    SizeLayoutTransition,
+)
+from engine.entities.layout import (
+    Flex,
+    FlexDirection,
+    Scene,
+    ScreenSizeLayout,
+    Padding,
+    EdgeInset,
+    Expanded,
+)
 from engine.models import Size, Position, FrameContext, Constraints, Color
 from engine.game import Game
 
+
 class PaddingEffect(Component):
-    def __init__(self, *, start: float, end: float, duration: float, repeat_times: int = 0):
+    def __init__(
+        self, *, start: float, end: float, duration: float, repeat_times: int = 0
+    ):
         self.start = start
         self.end = end
-        self.anim = Animation(duration=duration, direction=AnimationDirection.Alternate, repeat_times=repeat_times, end=AnimationEnd.End)
+        self.anim = Animation(
+            duration=duration,
+            direction=AnimationDirection.Alternate,
+            repeat_times=repeat_times,
+            end=AnimationEnd.End,
+        )
 
     def before_layout(self, entity, ctx, state):
-        if state is None or not hasattr(state, 'padding'):
-            raise Exception('PaddingEffect component must be on an entity which supports padding')
+        if state is None or not hasattr(state, "padding"):
+            raise Exception(
+                "PaddingEffect component must be on an entity which supports padding"
+            )
 
         value = self.anim.process(ctx.delta_time)
 
@@ -32,15 +57,16 @@ class PaddingEffect(Component):
 
         if self.anim.done:
             entity.components.remove(self)
-            entity.state.padding.left += value * (self.end - self.start) + self.start # type: ignore
-            entity.state.padding.right += value * (self.end - self.start) + self.start # type: ignore
-            entity.state.padding.top += value * (self.end - self.start) + self.start # type: ignore
-            entity.state.padding.bottom += value * (self.end - self.start) + self.start # type: ignore
+            entity.state.padding.left += value * (self.end - self.start) + self.start  # type: ignore
+            entity.state.padding.right += value * (self.end - self.start) + self.start  # type: ignore
+            entity.state.padding.top += value * (self.end - self.start) + self.start  # type: ignore
+            entity.state.padding.bottom += value * (self.end - self.start) + self.start  # type: ignore
+
 
 class ChangeSize(Component):
     def create(self, entity):
         self.entity = entity
-        entity.canvas.tag_bind(entity.id, '<Button-1>', self.click, add='+')
+        entity.canvas.tag_bind(entity.id, "<Button-1>", self.click, add="+")
 
     def click(self, e):
         if self.entity.state.size.width == 200:
@@ -48,16 +74,18 @@ class ChangeSize(Component):
         else:
             self.entity.state.size.width = 200
 
+
 class ChangeColor(Component):
     def create(self, entity):
         self.entity = entity
-        entity.canvas.tag_bind(entity.id, '<Button-1>', self.click, add='+')
+        entity.canvas.tag_bind(entity.id, "<Button-1>", self.click, add="+")
 
     def click(self, e):
         if self.entity.state.fill == Color.yellow():
             self.entity.state.fill = Color.gray()
         else:
             self.entity.state.fill = Color.yellow()
+
 
 class EntitySwitcherState:
     def __init__(self, current: int = 0):
@@ -70,11 +98,15 @@ class EntitySwitcherState:
 class EntitySwitcher(Entity):
     state: EntitySwitcherState
 
-    def __init__(self, *, tag: str|None = None,
-                 position: Position = Position(x=0, y=0),
-                 current: int = 0,
-                 components: list[Component] = [],
-                 entities: list[Entity]):
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        current: int = 0,
+        components: list[Component] = [],
+        entities: list[Entity]
+    ):
         super().__init__(tag=tag, position=position, components=components)
         self.state = EntitySwitcherState(current=current)
         self.last_curr = current
@@ -121,86 +153,98 @@ class EntitySwitcher(Entity):
 
         return child_size
 
+
 class SwitchOnClick(Component):
     def create(self, entity):
         self.entity = entity
-        entity.canvas.bind('<Button-1>', self.click)
+        entity.canvas.bind("<Button-1>", self.click)
 
     def click(self, e):
-        self.entity.state.current = (self.entity.state.current + 1) % len(self.entity.entities)
+        self.entity.state.current = (self.entity.state.current + 1) % len(
+            self.entity.entities
+        )
+
 
 scene = RootScene(
-        children=[
-            # ScreenSizeLayout(
-            #     child=Sprite(
-            #         asset_key='small',
-            #         )
-            #     ),
-            ScreenSizeLayout(
-                    child=Padding(
-                        padding=EdgeInset.all(20),
-                        child=Flex(
-                            direction=FlexDirection.Column,
-                            gap=20,
-                            children=[
-                                Expanded(),
-                                *[Flex(
-                                    direction=FlexDirection.Row,
-                                    gap=20,
-                                    children=[Sprite(
+    children=[
+        # ScreenSizeLayout(
+        #     child=Sprite(
+        #         asset_key='small',
+        #         )
+        #     ),
+        ScreenSizeLayout(
+            child=Padding(
+                padding=EdgeInset.all(20),
+                child=Flex(
+                    direction=FlexDirection.Column,
+                    gap=20,
+                    children=[
+                        Expanded(),
+                        *[
+                            Flex(
+                                direction=FlexDirection.Row,
+                                gap=20,
+                                children=[
+                                    Sprite(
                                         size=Size(width=100, height=100),
                                         components=[
                                             ChangeSize(),
-                                            SizeLayoutTransition(duration=.3, easing=Easing.ease_out),
-                                            ],
-                                        asset_key="small"
-                                        ) for _ in range(10)]
-                                    ) for _ in range(4)],
-                                Expanded()
-                                ]
+                                            SizeLayoutTransition(
+                                                duration=0.3, easing=Easing.ease_out
+                                            ),
+                                        ],
+                                        asset_key="small",
+                                    )
+                                    for _ in range(10)
+                                ],
                             )
-                        )
-                    ),
-            # ScreenSizeLayout(
-            #     child=Center(
-            #         child=Scene(
-            #             children=[
-            #                 EntitySwitcher(
-            #                     components=[
-            #                         SwitchOnClick()
-            #                         ],
-            #                     entities=[
-            #                         Rect(
-            #                             size=Size(width=150, height=70),
-            #                             fill=Color.gray(),
-            #                             components=[
-            #                                 SquareShake(),
-            #                                 PositionTransition(speed=100, skip=100),
-            #                                 DebugBounds(color=Color.blue()),
-            #                                 ],
-            #                             ),
-            #                         Rect(
-            #                             position=Position(x=100, y=150),
-            #                             size=Size(width=150, height=70),
-            #                             fill=Color.red(),
-            #                             components=[
-            #                                 SquareShake(),
-            #                                 PositionTransition(duration=.1)
-            #                                 ],
-            #                             ),
-            #                         ]
-            #                     )
-            #                 ]
-            #             )
-            #         )
-            #     ),
-            ScreenSizeLayout(
-                child=Padding(
-                    padding=EdgeInset.all(40),
-                    child=Flex(
-                        direction=FlexDirection.Column,
-                        children=[
-                            Flex(
+                            for _ in range(4)
+                        ],
+                        Expanded(),
+                    ],
+                ),
+            )
+        ),
+        # ScreenSizeLayout(
+        #     child=Center(
+        #         child=Scene(
+        #             children=[
+        #                 EntitySwitcher(
+        #                     components=[
+        #                         SwitchOnClick()
+        #                         ],
+        #                     entities=[
+        #                         Rect(
+        #                             size=Size(width=150, height=70),
+        #                             fill=Color.gray(),
+        #                             components=[
+        #                                 SquareShake(),
+        #                                 PositionTransition(speed=100, skip=100),
+        #                                 DebugBounds(color=Color.blue()),
+        #                                 ],
+        #                             ),
+        #                         Rect(
+        #                             position=Position(x=100, y=150),
+        #                             size=Size(width=150, height=70),
+        #                             fill=Color.red(),
+        #                             components=[
+        #                                 SquareShake(),
+        #                                 PositionTransition(duration=.1)
+        #                                 ],
+        #                             ),
+        #                         ]
+        #                     )
+        #                 ]
+        #             )
+        #         )
+        #     ),
+        ScreenSizeLayout(
+            child=Padding(
+                padding=EdgeInset.all(40),
+                child=Flex(
+                    direction=FlexDirection.Column,
+                    children=[
+                        Flex(
                             direction=FlexDirection.Row,
                             children=[
                                 Expanded(),
@@ -210,63 +254,61 @@ scene = RootScene(
                                     components=[
                                         ChangeSize(),
                                         ChangeColor(),
-                                        FillTransition(duration=.3),
+                                        FillTransition(duration=0.3),
                                         SizeLayoutTransition(speed=100),
-                                        ]
-                                    ),
+                                    ],
+                                ),
                                 Rect(
                                     size=Size(width=150, height=70),
                                     fill=Color.red(),
-                                    ),
-                                Expanded(),
-                                ]
-                            ),
-                            ]
-                        ),
-                    )
-                ),
-            ScreenSizeLayout(
-                child=Padding(
-                    components=[
-                        PaddingEffect(start=0, end=20, duration=1, repeat_times=3)
-                        ],
-                    padding=EdgeInset.all(20),
-                    child=Scene(
-                        children=[
-                                Rect(
-                                    fill=Color.white(),
-                                    size=Size(width=140, height=50),
-                                    child=Padding(
-                                        padding=EdgeInset.all(10),
-                                        child=Flex(
-                                            direction=FlexDirection.Column,
-                                            children=[
-                                                Text(
-                                                    components=[
-                                                        FpsCounter(),
-                                                        DebugBounds()
-                                                        ],
-                                                    text=""
-                                                    ),
-                                                Text(
-                                                    components=[
-                                                        AssetLoaderStats(),
-                                                        ],
-                                                    text=''
-                                                    ),
-                                                ]
-                                            ),
-                                        ),
                                 ),
-                            ]
+                                Expanded(),
+                            ],
                         ),
-                    )
+                    ],
                 ),
-            ]
-        )
+            )
+        ),
+        ScreenSizeLayout(
+            child=Padding(
+                components=[PaddingEffect(start=0, end=20, duration=1, repeat_times=3)],
+                padding=EdgeInset.all(20),
+                child=Scene(
+                    children=[
+                        Rect(
+                            fill=Color.white(),
+                            size=Size(width=140, height=50),
+                            child=Padding(
+                                padding=EdgeInset.all(10),
+                                child=Flex(
+                                    direction=FlexDirection.Column,
+                                    children=[
+                                        Text(
+                                            components=[FpsCounter(), DebugBounds()],
+                                            text="",
+                                        ),
+                                        Text(
+                                            components=[
+                                                AssetLoaderStats(),
+                                            ],
+                                            text="",
+                                        ),
+                                    ],
+                                ),
+                            ),
+                        ),
+                    ]
+                ),
+            )
+        ),
+    ]
+)
 
-game = Game(800, 600, scene)
+asset_folder = os.path.join(os.path.dirname(__file__), "assets")
+game = Game(800, 600, scene, asset_folder)
 # game.asset_manager.register('hero', Asset(AssetType.Still, 'assets/hero.png'), [(i, 100) for i in range(100, 201)])
-game.asset_manager.register('hero2', Asset(AssetType.Still, 'assets/hero.jpg'))
-game.asset_manager.register('small', Asset(AssetType.Still, 'assets/small.png', Resampling.NEAREST))
+game.asset_manager.register("hero2", Asset(AssetType.Still, "hero.jpg"))
+game.asset_manager.register(
+    "small", Asset(AssetType.Still, "small.png", Resampling.NEAREST)
+)
 game.asset_manager.start()

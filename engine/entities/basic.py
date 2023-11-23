@@ -14,11 +14,9 @@ class Entity(ABC):
     canvas: Canvas
 
     @abstractmethod
-    def __init__(self, *,
-                 tag: str|None,
-                 position: Position,
-                 components: list[Component] = []
-                 ):
+    def __init__(
+        self, *, tag: str | None, position: Position, components: list[Component] = []
+    ):
         self.id = 0
         self.tag = tag
         self.position = position
@@ -46,10 +44,12 @@ class Entity(ABC):
 
 
 class RootScene:
-    def __init__(self, *,
-                 position: Position = Position(x=0, y=0),
-                 children: list[Entity] = [],
-                 ):
+    def __init__(
+        self,
+        *,
+        position: Position = Position(x=0, y=0),
+        children: list[Entity] = [],
+    ):
         self.position = position
         self.children = children
 
@@ -67,13 +67,18 @@ class RootScene:
             child.paint(ctx, self.position)
 
     def layout(self, ctx: FrameContext):
-        constraints = Constraints(min_width=0, min_height=0, max_width=ctx.width, max_height=ctx.height)
+        constraints = Constraints(
+            min_width=0, min_height=0, max_width=ctx.width, max_height=ctx.height
+        )
 
         for child in self.children:
             child.layout(ctx, constraints)
 
+
 class RectState:
-    def __init__(self, *, size: Size | None, fill: Color, outline: Color, outline_width: float):
+    def __init__(
+        self, *, size: Size | None, fill: Color, outline: Color, outline_width: float
+    ):
         self.size = size
         self.fill = fill
         self.outline = outline
@@ -85,21 +90,26 @@ class RectState:
     def __repr__(self):
         return f"RectState(size={self.size}, fill={self.fill}, outline={self.outline}, outline_width={self.outline_width})"
 
+
 class Rect(Entity):
     state: RectState
 
-    def __init__(self, *,
-                 tag: str|None = None,
-                 position: Position = Position(x=0, y=0),
-                 size: Size | None = None,
-                 fill: Color = Color.white(),
-                 outline: Color = Color.black(),
-                 outline_width: float = 1.0,
-                 components: list[Component] = [],
-                 child: Entity|None = None,
-                 ):
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        size: Size | None = None,
+        fill: Color = Color.white(),
+        outline: Color = Color.black(),
+        outline_width: float = 1.0,
+        components: list[Component] = [],
+        child: Entity | None = None,
+    ):
         super().__init__(tag=tag, position=position, components=components)
-        self.state = RectState(size=size, fill=fill, outline=outline, outline_width=outline_width)
+        self.state = RectState(
+            size=size, fill=fill, outline=outline, outline_width=outline_width
+        )
         self._state = self.state.copy()
         self.child = child
 
@@ -126,12 +136,16 @@ class Rect(Entity):
 
         for effect in self.components:
             effect.before_paint(self, ctx, pos, size, self._state)
-        
-        self.canvas.coords(self.id, pos.x, pos.y, pos.x + size.width, pos.y + size.height)
-        self.canvas.itemconfigure(self.id,
-                                  fill=self._state.fill.to_hex(),
-                                  outline=self._state.outline.to_hex(),
-                                  width=self._state.outline_width)
+
+        self.canvas.coords(
+            self.id, pos.x, pos.y, pos.x + size.width, pos.y + size.height
+        )
+        self.canvas.itemconfigure(
+            self.id,
+            fill=self._state.fill.to_hex(),
+            outline=self._state.outline.to_hex(),
+            width=self._state.outline_width,
+        )
 
         if self.child is not None:
             self.child.paint(ctx, pos)
@@ -144,12 +158,14 @@ class Rect(Entity):
         self._state = state
 
         if self.child is not None:
-            self.child._size = self.child.layout(ctx, constraints.limit(state.size).force_max())
+            self.child._size = self.child.layout(
+                ctx, constraints.limit(state.size).force_max()
+            )
             if state.size is not None:
                 size = Size(
-                        width=max(state.size.width, self.child._size.width),
-                        height=max(state.size.height, self.child._size.height)
-                        )
+                    width=max(state.size.width, self.child._size.width),
+                    height=max(state.size.height, self.child._size.height),
+                )
             else:
                 size = self.child._size.copy()
 
@@ -157,8 +173,9 @@ class Rect(Entity):
 
         return constraints.fit_size(state.size)
 
+
 class TextState:
-    def __init__(self, *, text: str, width: float|None, fill: Color):
+    def __init__(self, *, text: str, width: float | None, fill: Color):
         self.text = text
         self.width = width
         self.fill = fill
@@ -166,14 +183,18 @@ class TextState:
     def copy(self):
         return copy.deepcopy(self)
 
+
 class Text(Entity):
-    def __init__(self, *, tag: str|None = None,
-                 position: Position = Position(x=0, y=0),
-                 text: str,
-                 width: float|None = None,
-                 fill: Color = Color.black(),
-                 components: list[Component] = []
-                 ):
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        text: str,
+        width: float | None = None,
+        fill: Color = Color.black(),
+        components: list[Component] = [],
+    ):
         super().__init__(tag=tag, position=position, components=components)
         self.state = TextState(text=text, width=width, fill=fill)
         self._state = self.state.copy()
@@ -181,7 +202,7 @@ class Text(Entity):
 
     def create(self, canvas: Canvas):
         self.canvas = canvas
-        self.id = canvas.create_text(0, 0, text='', anchor='nw')
+        self.id = canvas.create_text(0, 0, text="", anchor="nw")
 
         for component in self.components:
             component.create(self)
@@ -198,10 +219,12 @@ class Text(Entity):
             effect.before_paint(self, ctx, pos, self._size, self._state)
 
         self.canvas.coords(self.id, pos.x, pos.y)
-        self.canvas.itemconfigure(self.id,
-                                  text=self._state.text,
-                                  fill=self._state.fill.to_hex(),
-                                  width=self._size.width)
+        self.canvas.itemconfigure(
+            self.id,
+            text=self._state.text,
+            fill=self._state.fill.to_hex(),
+            width=self._size.width,
+        )
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         state = self.state.copy()
@@ -210,7 +233,9 @@ class Text(Entity):
 
         self._state = state
 
-        self.canvas.itemconfigure(self.id, text=state.text, fill=state.fill.to_hex(), width=None)
+        self.canvas.itemconfigure(
+            self.id, text=state.text, fill=state.fill.to_hex(), width=None
+        )
         bbox = self.canvas.bbox(self.id)
 
         w = constraints.fit_width(bbox[2] - bbox[0] + 6)
@@ -220,6 +245,7 @@ class Text(Entity):
 
         return self._size
 
+
 class SpriteState:
     def __init__(self, *, asset_key: str, size: Size | None = None):
         self.asset_key = asset_key
@@ -228,15 +254,19 @@ class SpriteState:
     def copy(self):
         return copy.deepcopy(self)
 
+
 class Sprite(Entity):
     state: SpriteState
 
-    def __init__(self, *, tag: str|None = None,
-                 position: Position = Position(x=0, y=0),
-                 size: Size | None = None,
-                 asset_key: str,
-                 components: list[Component] = []
-                 ):
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        size: Size | None = None,
+        asset_key: str,
+        components: list[Component] = [],
+    ):
         super().__init__(tag=tag, position=position, components=components)
         self.state = SpriteState(asset_key=asset_key, size=size)
         self._state = self.state.copy()
@@ -244,7 +274,7 @@ class Sprite(Entity):
 
     def create(self, canvas: Canvas):
         self.canvas = canvas
-        self.id = canvas.create_image(0, 0, image='', anchor='nw')
+        self.id = canvas.create_image(0, 0, image="", anchor="nw")
 
         for component in self.components:
             component.create(self)
@@ -259,8 +289,10 @@ class Sprite(Entity):
 
         for effect in self.components:
             effect.before_paint(self, ctx, pos, self._size, self._state)
-        
-        asset = ctx.asset_manager.get(self._state.asset_key, int(self._size.width), int(self._size.height))
+
+        asset = ctx.asset_manager.get(
+            self._state.asset_key, int(self._size.width), int(self._size.height)
+        )
         self.canvas.coords(self.id, pos.x, pos.y)
         self.canvas.itemconfigure(self.id, image=asset)
 
