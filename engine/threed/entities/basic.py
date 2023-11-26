@@ -99,6 +99,7 @@ class BaseCube(Entity3d):
         def is_visible(pos: Position3d):
             face_center = final_position.add(pos.rotated(state.rotation))
             face_normal = face_center.sub(final_position).normalized()
+            # face_normal = final_position.sub(face_center).normalized()
             camera_vec = final_position.sub(camera.focal_position()).normalized()
             return face_normal.dot(camera_vec) < -0.01
 
@@ -231,7 +232,7 @@ class Dice(BaseCube):
 
     def create(self, canvas: Canvas):
         self.canvas = canvas
-        for _ in range(7):
+        for _ in range(27):
             self.ids.append(canvas.create_polygon(
                 0, 0, 0, 0, 0, 0, 0, 0, fill="white", outline="black"
             ))
@@ -277,76 +278,102 @@ class Dice(BaseCube):
         self.current_idx += 1
         return self.ids[self.current_idx - 1]
 
-    def hide_last(self):
-        far = [100000] * 8
+    def raise_last(self):
         for idx in range(self.last_raise_idx, self.current_idx):
-            self.canvas.coords(self.ids[idx], *far)
+            self.canvas.tag_raise(self.ids[idx])
         self.last_raise_idx = self.current_idx
 
     def front(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
         id = self.next_id()
         self.canvas.coords(id, *self.side_vertices(w, h, transform))
-        self.canvas.itemconfig(id, fill="blue")
         id = self.next_id()
         self.canvas.coords(id, *self.point(w, h, 0, 0, transform))
-        self.canvas.itemconfig(id, fill="red")
+        self.canvas.itemconfig(id, fill="black")
 
         # self.state.rotation = Quaternion.from_axis_angle(Position3d(1, 0, 0), math.pi/8)
-        self.state.rotation *= Quaternion.from_axis_angle(Position3d(-1, 1, 1), math.pi/4 * ctx.delta_time)
+        self.state.rotation *= Quaternion.from_axis_angle(Position3d(1, 0, 0), math.pi/4 * ctx.delta_time)
+        # self.state.rotation *= Quaternion.from_axis_angle(Position3d(0, 1, 1), math.pi/3 * ctx.delta_time)
 
-        if not visible:
-            self.hide_last()
+        if visible:
+            self.raise_last()
         else:
             self.last_raise_idx = self.current_idx
 
 
     def back(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
         self.canvas.coords(self.next_id(), *self.side_vertices(w, h, transform))
+        for x in [-1, 1]:
+            for i in range(3):
+                id = self.next_id()
+                self.canvas.coords(id, *self.point(w, h, x * 0.2, -0.3 + 0.3*i, transform))
+                self.canvas.itemconfig(id, fill="black")
 
-        if not visible:
-            self.hide_last()
+
+        if visible:
+            self.raise_last()
         else:
             self.last_raise_idx = self.current_idx
 
     def left(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
         id = self.next_id()
         self.canvas.coords(id, *self.side_vertices(w, h, transform))
-        self.canvas.itemconfig(id, fill="orange")
 
-        if not visible:
-            self.hide_last()
+        for y in [-1, 1]:
+            id = self.next_id()
+            self.canvas.coords(id, *self.point(w, h, 0,  y * 0.2, transform))
+            self.canvas.itemconfig(id, fill="black")
+
+
+        if visible:
+            self.raise_last()
         else:
             self.last_raise_idx = self.current_idx
 
     def right(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
         id = self.next_id()
         self.canvas.coords(id, *self.side_vertices(w, h, transform))
-        self.canvas.itemconfig(id, fill="green")
 
-        if not visible:
-            self.hide_last()
+        for y in [-1, 1]:
+            for x in [-1, 1]:
+                id = self.next_id()
+                self.canvas.coords(id, *self.point(w, h, x * 0.22,  y * 0.22, transform))
+                self.canvas.itemconfig(id, fill="black")
+
+        id = self.next_id()
+        self.canvas.coords(id, *self.point(w, h, 0, 0, transform))
+        self.canvas.itemconfig(id, fill="black")
+
+        if visible:
+            self.raise_last()
         else:
             self.last_raise_idx = self.current_idx
 
     def top(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
         id = self.next_id()
         self.canvas.coords(id, *self.side_vertices(w, h, transform))
-        self.canvas.itemconfig(id, fill="red")
 
+        for x in [-1, 0, 1]:
+            id = self.next_id()
+            self.canvas.coords(id, *self.point(w, h, x * 0.3, 0, transform))
+            self.canvas.itemconfig(id, fill="black")
 
-        if not visible:
-            self.hide_last()
+        if visible:
+            self.raise_last()
         else:
             self.last_raise_idx = self.current_idx
 
     def bottom(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
         id = self.next_id()
         self.canvas.coords(id, *self.side_vertices(w, h, transform))
-        self.canvas.itemconfig(id, fill="yellow")
 
+        for y in [-1, 1]:
+            for x in [-1, 1]:
+                id = self.next_id()
+                self.canvas.coords(id, *self.point(w, h, x * 0.20,  y * 0.20, transform))
+                self.canvas.itemconfig(id, fill="black")
 
-        if not visible:
-            self.hide_last()
+        if visible:
+            self.raise_last()
         else:
             self.last_raise_idx = self.current_idx
 
