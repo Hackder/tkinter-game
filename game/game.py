@@ -1,11 +1,12 @@
+import math
 import copy
 import os
 from tkinter import Canvas
 from PIL.Image import Resampling
 
-from engine.animation.utils import Animation, AnimationDirection, AnimationEnd, Easing
+from engine.animation.utils import Animation, AnimationDirection, AnimationEnd
 from engine.assets import Asset, AssetType
-from engine.entities.basic import Entity, Rect, RootScene, Sprite, Text
+from engine.entities.basic import Entity, Rect, RootScene, Text
 from engine.entities.components.base import Component
 from engine.entities.components.debug import (
     DebugBounds,
@@ -24,9 +25,15 @@ from engine.entities.layout import (
     Padding,
     EdgeInset,
     Expanded,
+    Viewport3d,
 )
 from engine.models import Size, Position, FrameContext, Constraints, Color
-from engine.game import Game
+from engine.threed.entities import components
+from engine.threed.entities.components.base import Component3d
+from engine.threed.entities.components.effects import Position3dTransition
+from engine.threed.models import Camera, Position3d, Size3d, Quaternion
+from engine.threed.entities.basic import Dice
+from engine.renderer import Renderer
 
 
 class PaddingEffect(Component):
@@ -74,6 +81,21 @@ class ChangeSize(Component):
         else:
             self.entity.state.size.width = 200
 
+class ChangePosition(Component3d):
+    def create(self, entity):
+        self.entity = entity
+        for id in entity.ids:
+            entity.canvas.tag_bind(id, "<Button-1>", self.click, add="+")
+
+    def destroy(self, entity):
+        for id in entity.ids:
+            entity.canvas.tag_unbind(id, "<Button-1>")
+
+    def click(self, e):
+        if self.entity.state.position.x == 100:
+            self.entity.state.position.x = 0
+        else:
+            self.entity.state.position.x = 100
 
 class ChangeColor(Component):
     def create(self, entity):
@@ -172,39 +194,39 @@ scene = RootScene(
         #         asset_key='small',
         #         )
         #     ),
-        ScreenSizeLayout(
-            child=Padding(
-                padding=EdgeInset.all(20),
-                child=Flex(
-                    direction=FlexDirection.Column,
-                    gap=20,
-                    children=[
-                        Expanded(),
-                        *[
-                            Flex(
-                                direction=FlexDirection.Row,
-                                gap=20,
-                                children=[
-                                    Sprite(
-                                        size=Size(width=100, height=100),
-                                        components=[
-                                            ChangeSize(),
-                                            SizeLayoutTransition(
-                                                duration=0.3, easing=Easing.ease_out
-                                            ),
-                                        ],
-                                        asset_key="small",
-                                    )
-                                    for _ in range(10)
-                                ],
-                            )
-                            for _ in range(4)
-                        ],
-                        Expanded(),
-                    ],
-                ),
-            )
-        ),
+        # ScreenSizeLayout(
+        #     child=Padding(
+        #         padding=EdgeInset.all(20),
+        #         child=Flex(
+        #             direction=FlexDirection.Column,
+        #             gap=20,
+        #             children=[
+        #                 Expanded(),
+        #                 *[
+        #                     Flex(
+        #                         direction=FlexDirection.Row,
+        #                         gap=20,
+        #                         children=[
+        #                             Sprite(
+        #                                 size=Size(width=100, height=100),
+        #                                 components=[
+        #                                     ChangeSize(),
+        #                                     SizeLayoutTransition(
+        #                                         duration=0.3, easing=Easing.ease_out
+        #                                     ),
+        #                                 ],
+        #                                 asset_key="small",
+        #                             )
+        #                             for _ in range(10)
+        #                         ],
+        #                     )
+        #                     for _ in range(4)
+        #                 ],
+        #                 Expanded(),
+        #             ],
+        #         ),
+        #     )
+        # ),
         # ScreenSizeLayout(
         #     child=Center(
         #         child=Scene(
@@ -301,11 +323,33 @@ scene = RootScene(
                 ),
             )
         ),
+        ScreenSizeLayout(
+            child=Viewport3d(
+                camera=Camera(
+                    position=Position3d(x=0, y=0, z=-300),
+                    fov=50,
+                    ),
+                children=[
+                    Dice(
+                        position=Position3d(x=0, y=0, z=0),
+                        # rotation=Quaternion.from_axis_angle(
+                        #     axis=Position3d(x=1, y=1, z=0), angle=math.pi / 4
+                        # ),
+                        rotation=Quaternion.identity(),
+                        size=Size3d(width=30, height=30, depth=30),
+                        components=[
+                            ChangePosition(),
+                            # Position3dTransition(),
+                            ]
+                        )
+                    ]
+            )
+        ),
     ]
 )
 
 asset_folder = os.path.join(os.path.dirname(__file__), "assets")
-game = Game(800, 600, scene, asset_folder)
+game = Renderer(800, 600, scene, asset_folder)
 # game.asset_manager.register('hero', Asset(AssetType.Still, 'assets/hero.png'), [(i, 100) for i in range(100, 201)])
 game.asset_manager.register("hero2", Asset(AssetType.Still, "hero.jpg"))
 game.asset_manager.register(

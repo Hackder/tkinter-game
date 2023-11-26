@@ -1,0 +1,34 @@
+Takato hra (resp. velmi podobna) urcite exituje,
+hral som ju uz dost davno, ale nepamatam si jej meno,
+tak len strucne opisem priebeh hry:
+
+Hracia plocha je stvorcekova siet. Na nej sa nachadzaju miestnosti.
+Miestnosti su stvorcove a vsetky rovnake, ich ucel je viac menej dekoracny
+a aby delili stvorcekovu siet na skupinky (napr. 5x5). Priklad:
+(jeden stvorcek je #)
+
++---+
+|###|
+|###|
++-#-+---+
+|###|###|
+|#######|
+|###|###|
++---+---+
+
+Cielom hry je dostat sa zo zaciatocnej miestnosti do cielovej, ktora je
+na drujem strane plochy. Hra by prebiehala nasledovne:
+
+(V pripade dvoch hracov, no moze byt aj viac)
+Na zaciatku budu 4 figurky v prvej miestnosti (jedna prveho hraca,
+druha druheho, a dve "nikoho").
+
+Ked je nejaky hrac na tahu, hodi kockou (alebo si potiahne karticku to
+sa este rozhodnem) a podla toho ake cislo dostane, moze pohnut figurkou
+o tolko malych policok (stvorcekov) ktorymkolvek smerom. Trik je v 
+tom ze moze posuvat ktorukolvek figurku chce.
+
+Ulohou hraca je dostat svoju figurku ako prvu do poslednej miestnosti.
+Nemusi to vsak spravit on. Staci aby sa tam ta figurka dostala. Teda ak ju
+nejaky iny hrac posunie do ciela, v domneni ze to je "nikoho" figurka, tak
+tak ci tak vyhral vlastnik figurky

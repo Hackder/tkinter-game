@@ -3,7 +3,6 @@ import copy
 from abc import ABC, abstractmethod
 from tkinter import Canvas
 from typing import Any
-from engine.assets import AssetManader
 
 from engine.models import Color, FrameContext, Position, Size, Constraints
 from engine.entities.components.base import Component

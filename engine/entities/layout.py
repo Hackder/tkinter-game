@@ -5,6 +5,8 @@ from enum import StrEnum
 from engine.entities.components.base import Component
 from engine.models import FrameContext, Size, Constraints, Position
 from engine.entities.basic import Entity
+from engine.threed.entities.basic import Entity3d
+from engine.threed.models import Camera, Position3d, Quaternion
 
 
 class ScreenSizeLayout(Entity):
@@ -462,4 +464,50 @@ class Expanded(Entity):
         if self.child is not None:
             self.child._size = self.child.layout(ctx, constraints)
 
+        return constraints.to_max_size()
+
+class Viewport3d(Entity):
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        camera: Camera,
+        components: list[Component] = [],
+        children: list[Entity3d] = [],
+    ):
+        super().__init__(tag=tag, position=position, components=components)
+        self.camera = camera
+        self.children = children
+        self._size = Size(width=0, height=0)
+
+    def create(self, canvas: Canvas):
+        self.canvas = canvas
+
+        for component in self.components:
+            component.create(self)
+
+        for child in self.children:
+            child.create(canvas)
+
+    def destroy(self):
+        for component in self.components:
+            component.destroy(self)
+
+        for child in self.children:
+            child.destroy()
+
+    def paint(self, ctx: FrameContext, position: Position):
+        pos = self.position.add(position)
+
+        for component in self.components:
+            component.before_paint(self, ctx, pos, self._size, None)
+
+        pos3d = Position3d(x=pos.x, y=pos.y, z=0)
+
+        self.camera.size = (self._size.width, self._size.height)
+        for child in self.children:
+            child.paint(ctx, self.camera, pos3d, Quaternion.identity())
+
+    def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         return constraints.to_max_size()

@@ -6,7 +6,7 @@ from engine.models import FrameContext
 from engine.assets import AssetManader
 
 
-class Game:
+class Renderer:
     def __init__(
         self,
         window_width: float,
@@ -36,7 +36,7 @@ class Game:
         )
         self.scene.layout(ctx)
         self.scene.paint(ctx)
-        self.root.after(1, self.frame)
+        self.root.after(8, self.frame)
 
     def start(self):
         self.last_frame = timer()
