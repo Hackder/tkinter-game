@@ -105,7 +105,10 @@ class Position3dTransition(Object3dTransition):
         size: Size3d,
         state: Any | None,
     ) -> Position3d:
-        return position
+        if state is None or not hasattr(state, "position"):
+            raise Exception("State must have a position property")
+
+        return state.position
 
     def setter(
         self,
@@ -117,4 +120,7 @@ class Position3dTransition(Object3dTransition):
         state: Any | None,
         value: Position3d,
     ):
-        entity.state.position = value
+        if state is None or not hasattr(state, "position"):
+            raise Exception("State must have a position property")
+
+        state.position = value

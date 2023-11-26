@@ -51,6 +51,13 @@ class Position3d(Transitionable):
     def dot(self, other: Position3d):
         return self.x * other.x + self.y * other.y + self.z * other.z
 
+    def __eq__(self, other: Position3d):
+        return (
+            self.x == other.x
+            and self.y == other.y
+            and self.z == other.z
+        )
+
 @dataclass
 class Size3d:
     width: float

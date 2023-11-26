@@ -4,7 +4,7 @@ import os
 from tkinter import Canvas
 from PIL.Image import Resampling
 
-from engine.animation.utils import Animation, AnimationDirection, AnimationEnd
+from engine.animation.utils import Animation, AnimationDirection, AnimationEnd, Easing
 from engine.assets import Asset, AssetType
 from engine.entities.basic import Entity, Rect, RootScene, Text
 from engine.entities.components.base import Component
@@ -339,7 +339,7 @@ scene = RootScene(
                         size=Size3d(width=30, height=30, depth=30),
                         components=[
                             ChangePosition(),
-                            # Position3dTransition(),
+                            Position3dTransition(speed=100, easing=Easing.ease_in_out),
                             ]
                         )
                     ]
