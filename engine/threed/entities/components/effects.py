@@ -7,6 +7,7 @@ from engine.threed.entities.basic import Entity3d
 from engine.threed.entities.components.base import Component3d
 from engine.threed.models import Position3d, Quaternion, Size3d
 
+
 class Object3dTransition(Component3d, ABC):
     def __init__(
         self,
@@ -56,6 +57,7 @@ class Object3dTransition(Component3d, ABC):
         self,
         entity: Entity3d,
         ctx: FrameContext,
+        camera: Camera,
         position: Position3d,
         rotation: Quaternion,
         size: Size3d,
@@ -95,6 +97,7 @@ class Object3dTransition(Component3d, ABC):
 
         self.setter(entity, ctx, position, rotation, size, state, self.value)
 
+
 class Position3dTransition(Object3dTransition):
     def selector(
         self,
@@ -124,3 +127,34 @@ class Position3dTransition(Object3dTransition):
             raise Exception("State must have a position property")
 
         state.position = value
+
+
+class Rotation3dTransition(Object3dTransition):
+    def selector(
+        self,
+        entity: Entity3d,
+        ctx: FrameContext,
+        position: Position3d,
+        rotation: Quaternion,
+        size: Size3d,
+        state: Any | None,
+    ) -> Quaternion:
+        if state is None or not hasattr(state, "rotation"):
+            raise Exception("State must have a rotation property")
+
+        return state.rotation
+
+    def setter(
+        self,
+        entity: Entity3d,
+        ctx: FrameContext,
+        position: Position3d,
+        rotation: Quaternion,
+        size: Size3d,
+        state: Any | None,
+        value: Quaternion,
+    ):
+        if state is None or not hasattr(state, "rotation"):
+            raise Exception("State must have a rotation property")
+
+        state.rotation = value

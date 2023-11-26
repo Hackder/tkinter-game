@@ -1,9 +1,10 @@
 from __future__ import annotations
 import copy
 import math
-from dataclasses import dataclass
+from dataclasses import astuple, dataclass
 
 from engine.traits import Transitionable
+
 
 @dataclass
 class Position3d(Transitionable):
@@ -24,14 +25,18 @@ class Position3d(Transitionable):
     def sub(self, other: Position3d):
         return Position3d(x=self.x - other.x, y=self.y - other.y, z=self.z - other.z)
 
+    def mul(self, other: Position3d | float):
+        if isinstance(other, float):
+            return Position3d(x=self.x * other, y=self.y * other, z=self.z * other)
+
+        return Position3d(x=self.x * other.x, y=self.y * other.y, z=self.z * other.z)
+
     def normalized(self):
         length = self.length()
-        return Position3d(
-            x=self.x / length, y=self.y / length, z=self.z / length
-        )
+        return Position3d(x=self.x / length, y=self.y / length, z=self.z / length)
 
     def length(self):
-        return math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
+        return math.sqrt(self.x**2 + self.y**2 + self.z**2)
 
     def distance(self, other: Position3d):
         return math.sqrt(
@@ -52,11 +57,8 @@ class Position3d(Transitionable):
         return self.x * other.x + self.y * other.y + self.z * other.z
 
     def __eq__(self, other: Position3d):
-        return (
-            self.x == other.x
-            and self.y == other.y
-            and self.z == other.z
-        )
+        return self.x == other.x and self.y == other.y and self.z == other.z
+
 
 @dataclass
 class Size3d:
@@ -66,7 +68,7 @@ class Size3d:
 
 
 @dataclass
-class Quaternion:
+class Quaternion(Transitionable):
     w: float
     i: float
     j: float
@@ -95,11 +97,72 @@ class Quaternion:
             i=axis.x * math.sin(angle / 2),
             j=axis.y * math.sin(angle / 2),
             k=axis.z * math.sin(angle / 2),
-        )
+        ).normalized()
 
     @staticmethod
     def identity():
         return Quaternion(w=1, i=0, j=0, k=0)
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+    def __eq__(self, other: Quaternion):
+        return (
+            self.w == other.w
+            and self.i == other.i
+            and self.j == other.j
+            and self.k == other.k
+        )
+
+    def distance(self, other: Quaternion) -> float:
+        """
+        Angle between two quaternions
+        """
+
+        dot_product = self.normalized().dot(other.normalized())
+
+        if dot_product < 0:
+            dot_product = -dot_product
+
+        dot_product = min(1, max(-1, dot_product))
+
+        return math.acos(dot_product)
+
+    def magnitude(self) -> float:
+        return math.sqrt(self.w**2 + self.i**2 + self.j**2 + self.k**2)
+
+    def normalized(self) -> Quaternion:
+        magnitude = self.magnitude()
+        return Quaternion(
+            w=self.w / magnitude,
+            i=self.i / magnitude,
+            j=self.j / magnitude,
+            k=self.k / magnitude,
+        )
+
+    def negate(self) -> Quaternion:
+        return Quaternion(w=-self.w, i=-self.i, j=-self.j, k=-self.k)
+
+    def dot(self, other: Quaternion) -> float:
+        return self.w * other.w + self.i * other.i + self.j * other.j + self.k * other.k
+
+    def interpolate(self, other: Quaternion, progress: float) -> Quaternion:
+        a = self.normalized()
+        b = other.normalized()
+
+        theta = a.distance(b)
+
+        t1 = math.sin((1 - progress) * theta) / math.sin(theta)
+        t2 = math.sin(progress * theta) / math.sin(theta)
+
+        result = Quaternion(
+            w=a.w * t1 + b.w * t2,
+            i=a.i * t1 + b.i * t2,
+            j=a.j * t1 + b.j * t2,
+            k=a.k * t1 + b.k * t2,
+        )
+
+        return result.normalized()
 
 
 @dataclass
@@ -119,8 +182,8 @@ class Camera:
         aspect_ratio = self.size[0] / self.size[1]
 
         focal_z = 1 / math.tan(math.radians(self.fov / 2))
-        screen_x = x * focal_z / z
-        screen_y = y * focal_z / z * aspect_ratio
+        screen_x = x * focal_z / (z + focal_z)
+        screen_y = y * focal_z / (z + focal_z) * aspect_ratio
 
         return (
             (screen_x + 1) * self.size[0] / 2,
@@ -134,4 +197,20 @@ class Camera:
             z=self.position.z - 1 / math.tan(math.radians(self.fov / 2)),
         )
 
+    def screen_to_world(self, x: float, y: float, plane_z: float):
+        aspect_ratio = self.size[0] / self.size[1]
+        focal_z = 1 / math.tan(math.radians(self.fov / 2))
+        near_plane_x = x / self.size[0] * 2 - 1
+        near_plane_y = y / self.size[1] * 2 - 1
 
+        plane_z = plane_z - self.position.z
+
+        target_x = near_plane_x * (plane_z + focal_z) / focal_z
+        target_y = near_plane_y * (plane_z + focal_z) / focal_z / aspect_ratio
+
+
+        return Position3d(
+            x=target_x,
+            y=target_y,
+            z=plane_z,
+        )

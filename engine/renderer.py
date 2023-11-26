@@ -2,7 +2,7 @@ from timeit import default_timer as timer
 from tkinter import Tk, Canvas
 
 from engine.entities.basic import RootScene
-from engine.models import FrameContext
+from engine.models import Color, FrameContext
 from engine.assets import AssetManader
 
 
@@ -13,10 +13,11 @@ class Renderer:
         window_height: float,
         scene: RootScene,
         asset_folder: str,
+        bg: Color = Color.white(),
     ):
         self.root = Tk()
         self.root.geometry(f"{window_width}x{window_height}")
-        self.canvas = Canvas(self.root, highlightthickness=0, background="white")
+        self.canvas = Canvas(self.root, highlightthickness=0, background=bg.to_hex())
         self.canvas.pack(fill="both", expand=True)
         self.scene = scene
         self.last_frame = timer()

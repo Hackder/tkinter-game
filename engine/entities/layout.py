@@ -69,6 +69,12 @@ class EdgeInset:
     def vertical(value: float):
         return EdgeInset(top=value, right=0, bottom=value, left=0)
 
+    @staticmethod
+    def symmetric(horizontal: float, vertical: float):
+        return EdgeInset(
+            top=vertical, right=horizontal, bottom=vertical, left=horizontal
+        )
+
     def copy(self):
         return copy.copy(self)
 
@@ -465,6 +471,7 @@ class Expanded(Entity):
             self.child._size = self.child.layout(ctx, constraints)
 
         return constraints.to_max_size()
+
 
 class Viewport3d(Entity):
     def __init__(

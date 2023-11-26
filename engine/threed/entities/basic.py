@@ -1,4 +1,3 @@
-import math
 import copy
 from abc import ABC, abstractmethod
 from tkinter import Canvas
@@ -11,6 +10,7 @@ from typing import Any, Callable
 class Entity3d(ABC):
     state: Any
     canvas: Canvas
+    ids: list[int]
 
     @abstractmethod
     def __init__(self, *, tag: str | None, components: list[Component3d] = []):
@@ -51,6 +51,7 @@ class CubeState:
 
 TransformFn = Callable[[float, float], tuple[float, float]]
 
+
 class BaseCube(Entity3d):
     state: CubeState
 
@@ -83,18 +84,20 @@ class BaseCube(Entity3d):
     ):
         state = self.state.copy()
         for component in self.components:
-            component.before_paint(self, ctx, position, rotation, state.size, state)
+            component.before_paint(
+                self, ctx, camera, position, rotation, state.size, state
+            )
 
         final_position = position.add(state.position.rotated(rotation))
 
         positions: list[tuple[Position3d, str]] = [
-                (Position3d(0, 0, -state.size.depth / 2), 'front'),
-                (Position3d(0, 0, state.size.depth / 2), 'back'),
-                (Position3d(-state.size.width / 2, 0, 0), 'left'),
-                (Position3d(state.size.width / 2, 0, 0), 'right'),
-                (Position3d(0, state.size.height / 2, 0), 'top'),
-                (Position3d(0, -state.size.height / 2, 0), 'bottom'),
-                ]
+            (Position3d(0, 0, -state.size.depth / 2), "front"),
+            (Position3d(0, 0, state.size.depth / 2), "back"),
+            (Position3d(-state.size.width / 2, 0, 0), "left"),
+            (Position3d(state.size.width / 2, 0, 0), "right"),
+            (Position3d(0, state.size.height / 2, 0), "top"),
+            (Position3d(0, -state.size.height / 2, 0), "bottom"),
+        ]
 
         def is_visible(pos: Position3d):
             face_center = final_position.add(pos.rotated(state.rotation))
@@ -111,12 +114,10 @@ class BaseCube(Entity3d):
             state.size.height,
             lambda x, y: camera.project(
                 final_position.add(
-                    Position3d(x, y, -state.size.depth / 2).rotated(
-                        state.rotation
-                    )
+                    Position3d(x, y, -state.size.depth / 2).rotated(state.rotation)
                 )
             ),
-            'front' in visible_sides
+            "front" in visible_sides,
         )
 
         self.back(
@@ -125,12 +126,10 @@ class BaseCube(Entity3d):
             state.size.height,
             lambda x, y: camera.project(
                 final_position.add(
-                    Position3d(x, y, state.size.depth / 2).rotated(
-                        state.rotation
-                    )
+                    Position3d(x, y, state.size.depth / 2).rotated(state.rotation)
                 )
             ),
-            'back' in visible_sides
+            "back" in visible_sides,
         )
 
         self.left(
@@ -139,12 +138,10 @@ class BaseCube(Entity3d):
             state.size.height,
             lambda x, y: camera.project(
                 final_position.add(
-                    Position3d(-state.size.width / 2, y, x).rotated(
-                        state.rotation
-                    )
+                    Position3d(-state.size.width / 2, y, x).rotated(state.rotation)
                 )
             ),
-            'left' in visible_sides
+            "left" in visible_sides,
         )
 
         self.right(
@@ -153,12 +150,10 @@ class BaseCube(Entity3d):
             state.size.height,
             lambda x, y: camera.project(
                 final_position.add(
-                    Position3d(state.size.width / 2, y, x).rotated(
-                        state.rotation
-                    )
+                    Position3d(state.size.width / 2, y, x).rotated(state.rotation)
                 )
             ),
-            'right' in visible_sides
+            "right" in visible_sides,
         )
 
         self.top(
@@ -167,12 +162,10 @@ class BaseCube(Entity3d):
             state.size.depth,
             lambda x, y: camera.project(
                 final_position.add(
-                    Position3d(x, state.size.height / 2, y).rotated(
-                        state.rotation
-                    )
+                    Position3d(x, state.size.height / 2, y).rotated(state.rotation)
                 )
             ),
-            'top' in visible_sides
+            "top" in visible_sides,
         )
 
         self.bottom(
@@ -181,36 +174,76 @@ class BaseCube(Entity3d):
             state.size.depth,
             lambda x, y: camera.project(
                 final_position.add(
-                    Position3d(x, -state.size.height / 2, y).rotated(
-                        state.rotation
-                    )
+                    Position3d(x, -state.size.height / 2, y).rotated(state.rotation)
                 )
             ),
-            'bottom' in visible_sides
+            "bottom" in visible_sides,
         )
 
     @abstractmethod
-    def front(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
+    def front(
+        self,
+        ctx: FrameContext,
+        w: float,
+        h: float,
+        transform: TransformFn,
+        visible: bool,
+    ):
         pass
 
     @abstractmethod
-    def back(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
+    def back(
+        self,
+        ctx: FrameContext,
+        w: float,
+        h: float,
+        transform: TransformFn,
+        visible: bool,
+    ):
         pass
 
     @abstractmethod
-    def left(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
+    def left(
+        self,
+        ctx: FrameContext,
+        w: float,
+        h: float,
+        transform: TransformFn,
+        visible: bool,
+    ):
         pass
 
     @abstractmethod
-    def right(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
+    def right(
+        self,
+        ctx: FrameContext,
+        w: float,
+        h: float,
+        transform: TransformFn,
+        visible: bool,
+    ):
         pass
 
     @abstractmethod
-    def top(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
+    def top(
+        self,
+        ctx: FrameContext,
+        w: float,
+        h: float,
+        transform: TransformFn,
+        visible: bool,
+    ):
         pass
 
     @abstractmethod
-    def bottom(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
+    def bottom(
+        self,
+        ctx: FrameContext,
+        w: float,
+        h: float,
+        transform: TransformFn,
+        visible: bool,
+    ):
         pass
 
 
@@ -224,18 +257,25 @@ class Dice(BaseCube):
         size: Size3d,
         components: list[Component3d] = [],
     ):
-        super().__init__(tag=tag, position=position, rotation=rotation, size=size, components=components)
+        super().__init__(
+            tag=tag,
+            position=position,
+            rotation=rotation,
+            size=size,
+            components=components,
+        )
         self.current_idx = 0
         self.last_raise_idx = 0
         self.ids = []
 
-
     def create(self, canvas: Canvas):
         self.canvas = canvas
         for _ in range(27):
-            self.ids.append(canvas.create_polygon(
-                0, 0, 0, 0, 0, 0, 0, 0, fill="white", outline="black"
-            ))
+            self.ids.append(
+                canvas.create_polygon(
+                    0, 0, 0, 0, 0, 0, 0, 0, fill="white", outline="black"
+                )
+            )
 
         for component in self.components:
             component.create(self)
@@ -247,7 +287,13 @@ class Dice(BaseCube):
         for id in self.ids:
             self.canvas.delete(id)
 
-    def paint(self, ctx: FrameContext, camera: Camera, position: Position3d, rotation: Quaternion):
+    def paint(
+        self,
+        ctx: FrameContext,
+        camera: Camera,
+        position: Position3d,
+        rotation: Quaternion,
+    ):
         self.current_idx = 0
         self.last_raise_idx = 0
         return super().paint(ctx, camera, position, rotation)
@@ -260,7 +306,6 @@ class Dice(BaseCube):
             *transform(-w / 2, h / 2),
         ]
 
-
     def point(self, w, h, x, y, transform):
         small_size = w / 6
 
@@ -272,7 +317,7 @@ class Dice(BaseCube):
             *transform(xx + small_size, yy),
             *transform(xx + small_size, yy + small_size),
             *transform(xx, yy + small_size),
-                ]
+        ]
 
     def next_id(self):
         self.current_idx += 1
@@ -283,59 +328,83 @@ class Dice(BaseCube):
             self.canvas.tag_raise(self.ids[idx])
         self.last_raise_idx = self.current_idx
 
-    def front(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
+    def front(
+        self,
+        ctx: FrameContext,
+        w: float,
+        h: float,
+        transform: TransformFn,
+        visible: bool,
+    ):
         id = self.next_id()
         self.canvas.coords(id, *self.side_vertices(w, h, transform))
         id = self.next_id()
         self.canvas.coords(id, *self.point(w, h, 0, 0, transform))
         self.canvas.itemconfig(id, fill="black")
 
-        self.state.rotation *= Quaternion.from_axis_angle(Position3d(1, 0, 0), math.pi/3 * ctx.delta_time)
-        self.state.rotation *= Quaternion.from_axis_angle(Position3d(0, 1, 1).normalized(), math.pi * 1 * ctx.delta_time)
-
         if visible:
             self.raise_last()
         else:
             self.last_raise_idx = self.current_idx
 
-
-    def back(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
+    def back(
+        self,
+        ctx: FrameContext,
+        w: float,
+        h: float,
+        transform: TransformFn,
+        visible: bool,
+    ):
         self.canvas.coords(self.next_id(), *self.side_vertices(w, h, transform))
         for x in [-1, 1]:
             for i in range(3):
                 id = self.next_id()
-                self.canvas.coords(id, *self.point(w, h, x * 0.2, -0.3 + 0.3*i, transform))
+                self.canvas.coords(
+                    id, *self.point(w, h, x * 0.2, -0.3 + 0.3 * i, transform)
+                )
                 self.canvas.itemconfig(id, fill="black")
-
 
         if visible:
             self.raise_last()
         else:
             self.last_raise_idx = self.current_idx
 
-    def left(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
+    def left(
+        self,
+        ctx: FrameContext,
+        w: float,
+        h: float,
+        transform: TransformFn,
+        visible: bool,
+    ):
         id = self.next_id()
         self.canvas.coords(id, *self.side_vertices(w, h, transform))
 
         for y in [-1, 1]:
             id = self.next_id()
-            self.canvas.coords(id, *self.point(w, h, 0,  y * 0.2, transform))
+            self.canvas.coords(id, *self.point(w, h, 0, y * 0.2, transform))
             self.canvas.itemconfig(id, fill="black")
-
 
         if visible:
             self.raise_last()
         else:
             self.last_raise_idx = self.current_idx
 
-    def right(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
+    def right(
+        self,
+        ctx: FrameContext,
+        w: float,
+        h: float,
+        transform: TransformFn,
+        visible: bool,
+    ):
         id = self.next_id()
         self.canvas.coords(id, *self.side_vertices(w, h, transform))
 
         for y in [-1, 1]:
             for x in [-1, 1]:
                 id = self.next_id()
-                self.canvas.coords(id, *self.point(w, h, x * 0.22,  y * 0.22, transform))
+                self.canvas.coords(id, *self.point(w, h, x * 0.22, y * 0.22, transform))
                 self.canvas.itemconfig(id, fill="black")
 
         id = self.next_id()
@@ -347,7 +416,14 @@ class Dice(BaseCube):
         else:
             self.last_raise_idx = self.current_idx
 
-    def top(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
+    def top(
+        self,
+        ctx: FrameContext,
+        w: float,
+        h: float,
+        transform: TransformFn,
+        visible: bool,
+    ):
         id = self.next_id()
         self.canvas.coords(id, *self.side_vertices(w, h, transform))
 
@@ -361,19 +437,24 @@ class Dice(BaseCube):
         else:
             self.last_raise_idx = self.current_idx
 
-    def bottom(self, ctx: FrameContext, w: float, h: float, transform: TransformFn, visible: bool):
+    def bottom(
+        self,
+        ctx: FrameContext,
+        w: float,
+        h: float,
+        transform: TransformFn,
+        visible: bool,
+    ):
         id = self.next_id()
         self.canvas.coords(id, *self.side_vertices(w, h, transform))
 
         for y in [-1, 1]:
             for x in [-1, 1]:
                 id = self.next_id()
-                self.canvas.coords(id, *self.point(w, h, x * 0.20,  y * 0.20, transform))
+                self.canvas.coords(id, *self.point(w, h, x * 0.20, y * 0.20, transform))
                 self.canvas.itemconfig(id, fill="black")
 
         if visible:
             self.raise_last()
         else:
             self.last_raise_idx = self.current_idx
-
-

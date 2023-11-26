@@ -3,7 +3,7 @@ from abc import ABC
 from typing import TYPE_CHECKING, Any
 
 from engine.models import FrameContext
-from engine.threed.models import Position3d, Quaternion, Size3d
+from engine.threed.models import Camera, Position3d, Quaternion, Size3d
 
 if TYPE_CHECKING:
     from engine.threed.entities.basic import Entity3d
@@ -20,6 +20,7 @@ class Component3d:
         self,
         entity: Entity3d,
         ctx: FrameContext,
+        camera: Camera,
         position: Position3d,
         rotation: Quaternion,
         size: Size3d,
