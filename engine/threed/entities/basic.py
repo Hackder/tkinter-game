@@ -290,9 +290,8 @@ class Dice(BaseCube):
         self.canvas.coords(id, *self.point(w, h, 0, 0, transform))
         self.canvas.itemconfig(id, fill="black")
 
-        # self.state.rotation = Quaternion.from_axis_angle(Position3d(1, 0, 0), math.pi/8)
-        self.state.rotation *= Quaternion.from_axis_angle(Position3d(1, 0, 0), math.pi/4 * ctx.delta_time)
-        # self.state.rotation *= Quaternion.from_axis_angle(Position3d(0, 1, 1), math.pi/3 * ctx.delta_time)
+        self.state.rotation *= Quaternion.from_axis_angle(Position3d(1, 0, 0), math.pi/3 * ctx.delta_time)
+        self.state.rotation *= Quaternion.from_axis_angle(Position3d(0, 1, 1).normalized(), math.pi * 1 * ctx.delta_time)
 
         if visible:
             self.raise_last()
