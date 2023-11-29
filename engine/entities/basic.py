@@ -157,8 +157,9 @@ class Rect(Entity):
         self._state = state
 
         if self.child is not None:
+            new_constraints = constraints.limit(state.size)
             self.child._size = self.child.layout(
-                ctx, constraints.limit(state.size).force_max()
+                ctx, new_constraints.force_max() if state.size is not None else constraints
             )
             if state.size is not None:
                 size = Size(

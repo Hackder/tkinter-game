@@ -137,17 +137,17 @@ class Padding(Entity):
         x_padding = state.padding.left + state.padding.right
         y_padding = state.padding.top + state.padding.bottom
 
-        c.min_width -= x_padding
-        c.max_width -= x_padding
-        c.min_height -= y_padding
-        c.max_height -= y_padding
+        c.min_width = max(c.min_width - x_padding, 0)
+        c.min_height = max(c.min_height - y_padding, 0)
+        c.max_width = max(c.max_width - x_padding, 0)
+        c.max_height = max(c.max_height - y_padding, 0)
 
         child_size = self.child.layout(ctx, c)
         self.child._size = child_size
 
-        return Size(
+        return constraints.fit_size(Size(
             width=child_size.width + x_padding, height=child_size.height + y_padding
-        )
+        ))
 
 
 class Center(Entity):
@@ -191,7 +191,7 @@ class Center(Entity):
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         self.child._size = self.child.layout(ctx, constraints.with_min(0, 0))
 
-        return constraints.to_max_size()
+        return constraints.fit_size(self.child._size)
 
 
 class Stack(Entity):
@@ -303,10 +303,16 @@ class FlexDirection(StrEnum):
         elif self == FlexDirection.Column:
             return "Column"
 
+class Alignment(StrEnum):
+    Start = "Start"
+    Center = "Center"
+    End = "End"
+    Stretch = "Stretch"
 
 class FlexState:
-    def __init__(self, *, direction: FlexDirection, gap: float):
+    def __init__(self, *, direction: FlexDirection, align: Alignment, gap: float):
         self.direction = direction
+        self.align = align
         self.gap = gap
 
     def copy(self):
@@ -314,19 +320,22 @@ class FlexState:
 
 
 class Flex(Entity):
+    state: FlexState
+
     def __init__(
         self,
         *,
         tag: str | None = None,
         position: Position = Position(x=0, y=0),
         direction: FlexDirection,
+        align: Alignment = Alignment.Start,
         gap: float = 0,
         components: list[Component] = [],
         children: list[Entity] = [],
     ):
         super().__init__(tag=tag, position=position, components=components)
         self.children = children
-        self.state = FlexState(direction=direction, gap=gap)
+        self.state = FlexState(direction=direction, align=align, gap=gap)
         self._state = self.state.copy()
 
     def create(self, canvas: Canvas):
@@ -351,11 +360,21 @@ class Flex(Entity):
             component.before_paint(self, ctx, pos, self._size, self._state)
 
         for child in self.children:
-            child.paint(ctx, pos)
+            p = pos.copy()
             if self._state.direction == FlexDirection.Row:
+                if self._state.align == Alignment.End:
+                    p.y += self._size.height - child._size.height
+                elif self._state.align == Alignment.Center:
+                    p.y += (self._size.height - child._size.height) / 2
+                child.paint(ctx, p)
                 pos.x += child._size.width
                 pos.x += self._state.gap
             else:
+                if self._state.align == Alignment.End:
+                    p.x += self._size.width - child._size.width
+                elif self._state.align == Alignment.Center:
+                    p.x += (self._size.width - child._size.width) / 2
+                child.paint(ctx, p)
                 pos.y += child._size.height
                 pos.y += self._state.gap
 
@@ -370,10 +389,15 @@ class Flex(Entity):
         specific_children_size = 0
         flex_total = 0
         max_cross = 0
+        orig_c = constraints.copy()
 
         if state.direction == FlexDirection.Row:
+            if state.align != Alignment.Stretch:
+                constraints.min_height = 0
             constraints.min_width = 0
         else:
+            if state.align != Alignment.Stretch:
+                constraints.min_width = 0
             constraints.min_height = 0
 
         for child in self.children:
@@ -390,12 +414,32 @@ class Flex(Entity):
                 specific_children_size += child._size.height
                 max_cross = max(max_cross, child._size.width)
 
+        if state.align == Alignment.Stretch:
+            specific_children_size = 0
+            if state.direction == FlexDirection.Row:
+                constraints.min_height = max_cross
+            else:
+                constraints.min_width = max_cross
+
+            for child in self.children:
+                if self.is_flex_child(child):
+                    continue
+
+                if state.direction == FlexDirection.Row:
+                    child._size = child.layout(ctx, constraints)
+                    specific_children_size += child._size.width
+                else:
+                    child._size = child.layout(ctx, constraints)
+                    specific_children_size += child._size.height
+
         specific_children_size += state.gap * (len(self.children) - 1)
 
         if state.direction == FlexDirection.Row:
             rest = constraints.max_width - specific_children_size
         else:
             rest = constraints.max_height - specific_children_size
+            if state.align == Alignment.Stretch:
+                print(f"rest: {rest}, max_cross: {max_cross}")
 
         main_size = specific_children_size
 
@@ -415,9 +459,9 @@ class Flex(Entity):
                 main_size = constraints.max_height
 
         if state.direction == FlexDirection.Row:
-            return Size(width=main_size, height=max_cross)
+            return orig_c.fit_size(Size(width=main_size, height=max_cross))
         else:
-            return Size(width=max_cross, height=main_size)
+            return orig_c.fit_size(Size(width=max_cross, height=main_size))
 
 
 class ExpandState:

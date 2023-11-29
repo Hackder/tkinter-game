@@ -123,7 +123,7 @@ class Constraints:
 
     def fit_size(self, size: Size | None) -> Size:
         if size is None:
-            return Size(width=self.max_width, height=self.max_height)
+            return Size(width=self.min_width, height=self.min_height)
         return Size(
             width=self.fit_width(size.width), height=self.fit_height(size.height)
         )

@@ -6,7 +6,7 @@ from PIL.Image import Resampling
 from typing import Any
 from timeit import default_timer as timer
 
-from engine.animation.utils import Animation, AnimationDirection, AnimationEnd, Easing
+from engine.animation.utils import Animation, AnimationDirection, AnimationEnd
 from engine.assets import Asset, AssetType
 from engine.entities.basic import Entity, Rect, RootScene, Text
 from engine.entities.components.base import Component
@@ -15,14 +15,12 @@ from engine.entities.components.debug import (
     FpsCounter,
     AssetLoaderStats,
 )
-from engine.entities.components.effects import (
-    FillTransition,
-    SizeLayoutTransition,
-)
 from engine.entities.layout import (
     Flex,
     FlexDirection,
+    Alignment,
     Scene,
+    Center,
     ScreenSizeLayout,
     Padding,
     EdgeInset,
@@ -33,7 +31,6 @@ from engine.models import Size, Position, FrameContext, Constraints, Color
 from engine.threed.entities.basic import Entity3d
 from engine.threed.entities.components.base import Component3d
 from engine.threed.entities.components.effects import (
-    Position3dTransition,
     Rotation3dTransition,
 )
 from engine.threed.models import Camera, Position3d, Size3d, Quaternion
@@ -246,15 +243,15 @@ class Draggable(Component3d):
             return
 
         self.dragging = True
-        self.drag_start = self.camera.screen_to_world(e.x, e.y, self.entity.state.position.z)
+        self.drag_start = self.camera.screen_to_world(
+            e.x, e.y, self.entity.state.position.z
+        )
 
     def drag(self, e):
         if self.camera is None:
             return
 
-        world_pos = self.camera.screen_to_world(
-            e.x, e.y, self.entity.state.position.z
-        )
+        world_pos = self.camera.screen_to_world(e.x, e.y, self.entity.state.position.z)
 
         if self.dragging:
             self.entity.state.position.x += world_pos.x - self.drag_start.x
@@ -263,6 +260,7 @@ class Draggable(Component3d):
 
     def release(self, e):
         self.dragging = False
+
 
 class Throwable(Component3d):
     def __init__(self):
@@ -291,13 +289,23 @@ class Throwable(Component3d):
     ):
         self.camera = camera
 
-        l_screen_pos = camera.project(entity.state.position.sub(Position3d(entity.state.size.width / 2, 0 ,0)))
-        r_screen_pos = camera.project(entity.state.position.add(Position3d(entity.state.size.width / 2, 0 ,0)))
-        t_screen_pos = camera.project(entity.state.position.sub(Position3d(0, entity.state.size.height / 2 ,0)))
-        b_screen_pos = camera.project(entity.state.position.add(Position3d(0, entity.state.size.height / 2 ,0)))
+        l_screen_pos = camera.project(
+            entity.state.position.sub(Position3d(entity.state.size.width / 2, 0, 0))
+        )
+        r_screen_pos = camera.project(
+            entity.state.position.add(Position3d(entity.state.size.width / 2, 0, 0))
+        )
+        t_screen_pos = camera.project(
+            entity.state.position.sub(Position3d(0, entity.state.size.height / 2, 0))
+        )
+        b_screen_pos = camera.project(
+            entity.state.position.add(Position3d(0, entity.state.size.height / 2, 0))
+        )
 
         top_left = camera.screen_to_world(0, 0, entity.state.position.z)
-        bottom_right = camera.screen_to_world(camera.size[0], camera.size[1], entity.state.position.z)
+        bottom_right = camera.screen_to_world(
+            camera.size[0], camera.size[1], entity.state.position.z
+        )
 
         if l_screen_pos[0] < 0:
             self.speed.x *= -1
@@ -313,7 +321,9 @@ class Throwable(Component3d):
             entity.state.position.y = bottom_right.y - entity.state.size.height / 2
 
         if not self.dragging:
-            entity.state.position = entity.state.position.add(self.speed.mul(ctx.delta_time)) 
+            entity.state.position = entity.state.position.add(
+                self.speed.mul(ctx.delta_time)
+            )
             decelleration = 0.99
             self.speed.x *= decelleration
             self.speed.y *= decelleration
@@ -324,17 +334,16 @@ class Throwable(Component3d):
             return
 
         self.dragging = True
-        self.drag_start = self.camera.screen_to_world(e.x, e.y, self.entity.state.position.z)
+        self.drag_start = self.camera.screen_to_world(
+            e.x, e.y, self.entity.state.position.z
+        )
         self.last_move = timer()
 
     def drag(self, e):
         if self.camera is None:
             return
 
-        world_pos = self.camera.screen_to_world(
-            e.x, e.y, self.entity.state.position.z
-        )
-
+        world_pos = self.camera.screen_to_world(e.x, e.y, self.entity.state.position.z)
 
         if self.dragging:
             now = timer()
@@ -389,6 +398,42 @@ scene = RootScene(
         ),
         ScreenSizeLayout(
             child=Padding(
+                padding=EdgeInset.all(50),
+                child=Flex(
+                    direction=FlexDirection.Row,
+                    children=[
+                        # Rect(
+                        #     fill=Color.white(),
+                        #     child=Text(tag='random', text="random")
+                        #     )
+                        Flex(
+                            direction=FlexDirection.Column,
+                            gap=20,
+                            children=[
+                                Expanded(),
+                                Rect(
+                                    fill=Color.white(),
+                                    child=Padding(
+                                        padding=EdgeInset.symmetric(30, 10),
+                                        child=Center(child=Text(text="Play")),
+                                    ),
+                                ),
+                                Rect(
+                                    fill=Color.white(),
+                                    child=Padding(
+                                        padding=EdgeInset.symmetric(30, 10),
+                                        child=Center(child=Text(text="Load game")),
+                                    ),
+                                ),
+                                Expanded()
+                            ],
+                        )
+                    ],
+                ),
+            )
+        ),
+        ScreenSizeLayout(
+            child=Padding(
                 components=[PaddingEffect(start=0, end=20, duration=1, repeat_times=3)],
                 padding=EdgeInset.all(20),
                 child=Scene(
@@ -400,15 +445,18 @@ scene = RootScene(
                                 padding=EdgeInset.symmetric(10, 5),
                                 child=Flex(
                                     direction=FlexDirection.Column,
+                                    align=Alignment.Stretch,
+                                    components=[DebugBounds(color=Color.blue())],
                                     children=[
                                         Expanded(),
                                         Text(
-                                            components=[FpsCounter()],
+                                            components=[FpsCounter(), DebugBounds()],
                                             text="",
                                         ),
                                         Text(
                                             components=[
                                                 AssetLoaderStats(),
+                                                DebugBounds(),
                                             ],
                                             text="",
                                         ),
