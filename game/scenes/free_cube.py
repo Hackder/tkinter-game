@@ -9,6 +9,15 @@ from engine.threed.entities.basic import Dice, Entity3d
 from engine.threed.models import Position3d, Size3d, Camera, Quaternion
 from engine.models import FrameContext
 
+natural_directions = [
+    Position3d(1, 0, 0),
+    Position3d(-1, 0, 0),
+    Position3d(0, 1, 0),
+    Position3d(0, -1, 0),
+    Position3d(0, 0, 1),
+    Position3d(0, 0, -1),
+]
+
 class Throwable(Component3d):
     def __init__(self, initial_speed=Position3d(x=0, y=0, z=0)):
         self.dragging = False
@@ -70,20 +79,10 @@ class Throwable(Component3d):
 
         if not self.dragging:
             perpendicular_axis = self.speed.cross(Position3d(0, 0, 1)).normalized()
-            angle = self.speed.length() / (size.width * 4) * math.pi * 2 * ctx.delta_time
+            angle = self.speed.length() / (size.width * 4) * math.pi * ctx.delta_time
             angular_speed = Quaternion.from_axis_angle(perpendicular_axis, angle)
             entity.state.rotation = angular_speed * entity.state.rotation
             rotation_speed = 4*math.pi - self.speed.length() / (size.width * 4) * math.pi * 2
-
-            # Calculate the direction the dice is tilted from the closest face
-            natural_directions = [
-                Position3d(1, 0, 0),
-                Position3d(-1, 0, 0),
-                Position3d(0, 1, 0),
-                Position3d(0, -1, 0),
-                Position3d(0, 0, 1),
-                Position3d(0, 0, -1),
-                    ]
 
             closest_direction = None
             closest_distance = 0
@@ -103,16 +102,6 @@ class Throwable(Component3d):
             perpendicular_axis = self.speed.cross(Position3d(0, 0, 1)).normalized()
             angular_speed = Quaternion.from_axis_angle(perpendicular_axis, angle)
             entity.state.rotation = angular_speed * entity.state.rotation
-
-            # Calculate the direction the dice is tilted from the closest face
-            natural_directions = [
-                Position3d(1, 0, 0),
-                Position3d(-1, 0, 0),
-                Position3d(0, 1, 0),
-                Position3d(0, -1, 0),
-                Position3d(0, 0, 1),
-                Position3d(0, 0, -1),
-                    ]
 
             closest_direction = None
             closest_distance = 0
@@ -138,10 +127,11 @@ class Throwable(Component3d):
             entity.state.position = entity.state.position.add(
                 self.speed.mul(ctx.delta_time)
             )
-            decelleration = 0.99
-            self.speed.x *= decelleration
-            self.speed.y *= decelleration
-            self.speed.z *= decelleration
+
+            deceleration = self.speed.mul(-1).max_by_length(self.speed.normalized().mul(-200))
+
+            self.speed.x += deceleration.x * ctx.delta_time
+            self.speed.y += deceleration.y * ctx.delta_time
 
     def click(self, e):
         if self.camera is None:
@@ -184,7 +174,7 @@ free_cube = ScreenSizeLayout(
                 ),
                 children=[
                     Dice(
-                        position=Position3d(x=100, y=-80, z=0),
+                        position=Position3d(x=0, y=-60, z=0),
                         size=Size3d(width=10, height=10, depth=10),
                         rotation=Quaternion.from_axis_angle(Position3d(0, 1, 1), -math.pi / 4),
                         components=[

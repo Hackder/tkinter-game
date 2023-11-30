@@ -26,10 +26,10 @@ class Position3d(Transitionable):
         return Position3d(x=self.x - other.x, y=self.y - other.y, z=self.z - other.z)
 
     def mul(self, other: Position3d | float):
-        if isinstance(other, float):
+        if type(other) == float or type(other) == int:
             return Position3d(x=self.x * other, y=self.y * other, z=self.z * other)
-
-        return Position3d(x=self.x * other.x, y=self.y * other.y, z=self.z * other.z)
+        else:
+            return Position3d(x=self.x * other.x, y=self.y * other.y, z=self.z * other.z)
 
     def normalized(self):
         length = self.length()
@@ -67,6 +67,12 @@ class Position3d(Transitionable):
             y=self.z * other.x - self.x * other.z,
             z=self.x * other.y - self.y * other.x,
         )
+
+    def max_by_length(self, other: Position3d):
+        if self.length() > other.length():
+            return self
+        else:
+            return other
 
     def __eq__(self, other: Position3d):
         return self.x == other.x and self.y == other.y and self.z == other.z
