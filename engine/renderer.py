@@ -11,20 +11,27 @@ class Renderer:
         self,
         window_width: float,
         window_height: float,
-        scene: RootScene,
         asset_folder: str,
         bg: Color = Color.white(),
     ):
+        self.scene: RootScene | None = None
         self.root = Tk()
         self.root.geometry(f"{window_width}x{window_height}")
         self.canvas = Canvas(self.root, highlightthickness=0, background=bg.to_hex())
         self.canvas.pack(fill="both", expand=True)
-        self.scene = scene
         self.last_frame = timer()
         self.asset_manager = AssetManader(asset_folder)
-        scene.create(self.canvas)
+
+    def assign_scene(self, scene: RootScene):
+        if self.scene is not None:
+            self.scene.destroy()
+        self.scene = scene
+        self.scene.create(self.canvas)
 
     def frame(self):
+        if self.scene is None:
+            raise Exception("No scene assigned")
+
         now = timer()
         delta_time = now - self.last_frame
         self.last_frame = now

@@ -230,3 +230,31 @@ class Color(Transitionable):
     @staticmethod
     def yellow() -> Color:
         return Color(r=255, g=255, b=0)
+
+class EdgeInset:
+    def __init__(self, top: float, right: float, bottom: float, left: float):
+        self.top = top
+        self.right = right
+        self.bottom = bottom
+        self.left = left
+
+    @staticmethod
+    def all(value: float):
+        return EdgeInset(top=value, right=value, bottom=value, left=value)
+
+    @staticmethod
+    def horizontal(value: float):
+        return EdgeInset(top=0, right=value, bottom=0, left=value)
+
+    @staticmethod
+    def vertical(value: float):
+        return EdgeInset(top=value, right=0, bottom=value, left=0)
+
+    @staticmethod
+    def symmetric(horizontal: float, vertical: float):
+        return EdgeInset(
+            top=vertical, right=horizontal, bottom=vertical, left=horizontal
+        )
+
+    def copy(self):
+        return copy.copy(self)

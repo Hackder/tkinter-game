@@ -33,6 +33,8 @@ class Position3d(Transitionable):
 
     def normalized(self):
         length = self.length()
+        if length == 0:
+            return Position3d(x=0, y=0, z=0)
         return Position3d(x=self.x / length, y=self.y / length, z=self.z / length)
 
     def length(self):
@@ -56,8 +58,21 @@ class Position3d(Transitionable):
     def dot(self, other: Position3d):
         return self.x * other.x + self.y * other.y + self.z * other.z
 
+    def angle(self, other: Position3d):
+        return math.acos(self.dot(other) / (self.length() * other.length()))
+
+    def cross(self, other: Position3d):
+        return Position3d(
+            x=self.y * other.z - self.z * other.y,
+            y=self.z * other.x - self.x * other.z,
+            z=self.x * other.y - self.y * other.x,
+        )
+
     def __eq__(self, other: Position3d):
         return self.x == other.x and self.y == other.y and self.z == other.z
+
+    def __repr__(self):
+        return f"Position3d({self.x:.2f}, {self.y:.2f}, {self.z:.2f})"
 
 
 @dataclass

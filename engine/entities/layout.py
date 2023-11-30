@@ -3,7 +3,7 @@ from tkinter import Canvas
 from enum import StrEnum
 
 from engine.entities.components.base import Component
-from engine.models import FrameContext, Size, Constraints, Position
+from engine.models import FrameContext, Size, Constraints, Position, EdgeInset
 from engine.entities.basic import Entity
 from engine.threed.entities.basic import Entity3d
 from engine.threed.models import Camera, Position3d, Quaternion
@@ -48,35 +48,6 @@ class ScreenSizeLayout(Entity):
         self.child._size = self.child.layout(ctx, constraints)
 
         return Size(width=ctx.width, height=ctx.height)
-
-
-class EdgeInset:
-    def __init__(self, top: float, right: float, bottom: float, left: float):
-        self.top = top
-        self.right = right
-        self.bottom = bottom
-        self.left = left
-
-    @staticmethod
-    def all(value: float):
-        return EdgeInset(top=value, right=value, bottom=value, left=value)
-
-    @staticmethod
-    def horizontal(value: float):
-        return EdgeInset(top=0, right=value, bottom=0, left=value)
-
-    @staticmethod
-    def vertical(value: float):
-        return EdgeInset(top=value, right=0, bottom=value, left=0)
-
-    @staticmethod
-    def symmetric(horizontal: float, vertical: float):
-        return EdgeInset(
-            top=vertical, right=horizontal, bottom=vertical, left=horizontal
-        )
-
-    def copy(self):
-        return copy.copy(self)
 
 
 class PaddingState:
@@ -394,10 +365,14 @@ class Flex(Entity):
         if state.direction == FlexDirection.Row:
             if state.align != Alignment.Stretch:
                 constraints.min_height = 0
+            else:
+                constraints.min_height = constraints.max_height
             constraints.min_width = 0
         else:
             if state.align != Alignment.Stretch:
                 constraints.min_width = 0
+            else:
+                constraints.min_width = constraints.max_width
             constraints.min_height = 0
 
         for child in self.children:
@@ -414,32 +389,12 @@ class Flex(Entity):
                 specific_children_size += child._size.height
                 max_cross = max(max_cross, child._size.width)
 
-        if state.align == Alignment.Stretch:
-            specific_children_size = 0
-            if state.direction == FlexDirection.Row:
-                constraints.min_height = max_cross
-            else:
-                constraints.min_width = max_cross
-
-            for child in self.children:
-                if self.is_flex_child(child):
-                    continue
-
-                if state.direction == FlexDirection.Row:
-                    child._size = child.layout(ctx, constraints)
-                    specific_children_size += child._size.width
-                else:
-                    child._size = child.layout(ctx, constraints)
-                    specific_children_size += child._size.height
-
         specific_children_size += state.gap * (len(self.children) - 1)
 
         if state.direction == FlexDirection.Row:
             rest = constraints.max_width - specific_children_size
         else:
             rest = constraints.max_height - specific_children_size
-            if state.align == Alignment.Stretch:
-                print(f"rest: {rest}, max_cross: {max_cross}")
 
         main_size = specific_children_size
 
@@ -562,3 +517,70 @@ class Viewport3d(Entity):
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         return constraints.to_max_size()
+
+class WidthState:
+    def __init__(self, *, width: float):
+        self.width = width
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+class WidthBox(Entity):
+    state: WidthState
+
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        width: float,
+        components: list[Component] = [],
+        child: Entity,
+    ):
+        super().__init__(tag=tag, position=position, components=components)
+        self.child = child
+        self.state = WidthState(width=width)
+        self._state = self.state.copy()
+
+
+    def create(self, canvas: Canvas):
+        self.canvas = canvas
+
+        for component in self.components:
+            component.create(self)
+
+        self.child.create(canvas)
+
+    def destroy(self):
+        for component in self.components:
+            component.destroy(self)
+        self.child.destroy()
+
+    def paint(self, ctx: FrameContext, position: Position):
+        pos = self.position.add(position)
+
+        for component in self.components:
+            component.before_paint(self, ctx, pos, self._size, self._state)
+
+        child_position = Position(
+            x=pos.x, y=pos.y
+        )
+        self.child.paint(ctx, child_position)
+
+    def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
+        state = self.state.copy()
+        for component in self.components:
+            component.before_layout(self, ctx, state)
+        self._state = state
+
+        c = constraints.copy()
+        c.min_width = state.width
+        c.max_width = state.width
+
+        child_size = self.child.layout(ctx, c)
+        self.child._size = child_size
+
+        return constraints.fit_size(Size(
+            width=state.width, height=child_size.height
+        ))
+

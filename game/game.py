@@ -1,42 +1,17 @@
 import math
 import copy
-import os
 from tkinter import Canvas
-from PIL.Image import Resampling
 from typing import Any
-from timeit import default_timer as timer
 
 from engine.animation.utils import Animation, AnimationDirection, AnimationEnd
-from engine.assets import Asset, AssetType
-from engine.entities.basic import Entity, Rect, RootScene, Text
+from engine.entities.basic import Entity, RootScene
 from engine.entities.components.base import Component
-from engine.entities.components.debug import (
-    DebugBounds,
-    FpsCounter,
-    AssetLoaderStats,
-)
-from engine.entities.layout import (
-    Flex,
-    FlexDirection,
-    Alignment,
-    Scene,
-    Center,
-    ScreenSizeLayout,
-    Padding,
-    EdgeInset,
-    Expanded,
-    Viewport3d,
-)
 from engine.models import Size, Position, FrameContext, Constraints, Color
 from engine.threed.entities.basic import Entity3d
 from engine.threed.entities.components.base import Component3d
-from engine.threed.entities.components.effects import (
-    Rotation3dTransition,
-)
 from engine.threed.models import Camera, Position3d, Size3d, Quaternion
-from engine.threed.entities.basic import Dice
-from engine.renderer import Renderer
 
+from game.scenes import main_menu, metrics, free_cube
 
 class PaddingEffect(Component):
     def __init__(
@@ -262,105 +237,6 @@ class Draggable(Component3d):
         self.dragging = False
 
 
-class Throwable(Component3d):
-    def __init__(self):
-        self.dragging = False
-        self.drag_start = Position3d(x=0, y=0, z=0)
-        self.camera = None
-        self.speed = Position3d(x=0, y=0, z=0)
-        self.last_move = timer()
-
-    def create(self, entity):
-        self.entity = entity
-        entity.canvas.bind("<B1-Motion>", self.drag)
-        for id in entity.ids:
-            entity.canvas.tag_bind(id, "<Button-1>", self.click, add="+")
-            entity.canvas.tag_bind(id, "<ButtonRelease-1>", self.release, add="+")
-
-    def before_paint(
-        self,
-        entity: Entity3d,
-        ctx: FrameContext,
-        camera: Camera,
-        position: Position3d,
-        rotation: Quaternion,
-        size: Size3d,
-        state: Any | None,
-    ):
-        self.camera = camera
-
-        l_screen_pos = camera.project(
-            entity.state.position.sub(Position3d(entity.state.size.width / 2, 0, 0))
-        )
-        r_screen_pos = camera.project(
-            entity.state.position.add(Position3d(entity.state.size.width / 2, 0, 0))
-        )
-        t_screen_pos = camera.project(
-            entity.state.position.sub(Position3d(0, entity.state.size.height / 2, 0))
-        )
-        b_screen_pos = camera.project(
-            entity.state.position.add(Position3d(0, entity.state.size.height / 2, 0))
-        )
-
-        top_left = camera.screen_to_world(0, 0, entity.state.position.z)
-        bottom_right = camera.screen_to_world(
-            camera.size[0], camera.size[1], entity.state.position.z
-        )
-
-        if l_screen_pos[0] < 0:
-            self.speed.x *= -1
-            entity.state.position.x = top_left.x + entity.state.size.width / 2
-        if r_screen_pos[0] > camera.size[0]:
-            self.speed.x *= -1
-            entity.state.position.x = bottom_right.x - entity.state.size.width / 2
-        if t_screen_pos[1] < 0:
-            self.speed.y *= -1
-            entity.state.position.y = top_left.y + entity.state.size.height / 2
-        if b_screen_pos[1] > camera.size[1]:
-            self.speed.y *= -1
-            entity.state.position.y = bottom_right.y - entity.state.size.height / 2
-
-        if not self.dragging:
-            entity.state.position = entity.state.position.add(
-                self.speed.mul(ctx.delta_time)
-            )
-            decelleration = 0.99
-            self.speed.x *= decelleration
-            self.speed.y *= decelleration
-            self.speed.z *= decelleration
-
-    def click(self, e):
-        if self.camera is None:
-            return
-
-        self.dragging = True
-        self.drag_start = self.camera.screen_to_world(
-            e.x, e.y, self.entity.state.position.z
-        )
-        self.last_move = timer()
-
-    def drag(self, e):
-        if self.camera is None:
-            return
-
-        world_pos = self.camera.screen_to_world(e.x, e.y, self.entity.state.position.z)
-
-        if self.dragging:
-            now = timer()
-            delta = now - self.last_move
-
-            self.speed = Position3d(
-                x=(world_pos.x - self.drag_start.x) / delta,
-                y=(world_pos.y - self.drag_start.y) / delta,
-                z=0,
-            )
-            self.entity.state.position.x += world_pos.x - self.drag_start.x
-            self.entity.state.position.y += world_pos.y - self.drag_start.y
-            self.drag_start = Position3d(x=world_pos.x, y=world_pos.y, z=0)
-            self.last_move = now
-
-    def release(self, e):
-        self.dragging = False
 
 
 class SwitchOnClick(Component):
@@ -373,110 +249,17 @@ class SwitchOnClick(Component):
             self.entity.entities
         )
 
+menu_options = [
+        "New game",
+        "Load game",
+        "Exit"
+        ]
 
 scene = RootScene(
     children=[
-        ScreenSizeLayout(
-            child=Viewport3d(
-                camera=Camera(
-                    position=Position3d(x=0, y=0, z=-300),
-                    fov=50,
-                ),
-                children=[
-                    Dice(
-                        position=Position3d(x=0, y=0, z=0),
-                        size=Size3d(width=10, height=10, depth=10),
-                        components=[
-                            GrabCursor(),
-                            ChangeRotation(),
-                            Rotation3dTransition(),
-                            Throwable(),
-                        ],
-                    )
-                ],
-            )
-        ),
-        ScreenSizeLayout(
-            child=Padding(
-                padding=EdgeInset.all(50),
-                child=Flex(
-                    direction=FlexDirection.Row,
-                    children=[
-                        # Rect(
-                        #     fill=Color.white(),
-                        #     child=Text(tag='random', text="random")
-                        #     )
-                        Flex(
-                            direction=FlexDirection.Column,
-                            gap=20,
-                            children=[
-                                Expanded(),
-                                Rect(
-                                    fill=Color.white(),
-                                    child=Padding(
-                                        padding=EdgeInset.symmetric(30, 10),
-                                        child=Center(child=Text(text="Play")),
-                                    ),
-                                ),
-                                Rect(
-                                    fill=Color.white(),
-                                    child=Padding(
-                                        padding=EdgeInset.symmetric(30, 10),
-                                        child=Center(child=Text(text="Load game")),
-                                    ),
-                                ),
-                                Expanded()
-                            ],
-                        )
-                    ],
-                ),
-            )
-        ),
-        ScreenSizeLayout(
-            child=Padding(
-                components=[PaddingEffect(start=0, end=20, duration=1, repeat_times=3)],
-                padding=EdgeInset.all(20),
-                child=Scene(
-                    children=[
-                        Rect(
-                            fill=Color.white(),
-                            size=Size(width=140, height=50),
-                            child=Padding(
-                                padding=EdgeInset.symmetric(10, 5),
-                                child=Flex(
-                                    direction=FlexDirection.Column,
-                                    align=Alignment.Stretch,
-                                    components=[DebugBounds(color=Color.blue())],
-                                    children=[
-                                        Expanded(),
-                                        Text(
-                                            components=[FpsCounter(), DebugBounds()],
-                                            text="",
-                                        ),
-                                        Text(
-                                            components=[
-                                                AssetLoaderStats(),
-                                                DebugBounds(),
-                                            ],
-                                            text="",
-                                        ),
-                                        Expanded(),
-                                    ],
-                                ),
-                            ),
-                        ),
-                    ]
-                ),
-            )
-        ),
+        free_cube.free_cube,
+        main_menu.main_menu,
+        metrics.metrics
     ]
 )
 
-asset_folder = os.path.join(os.path.dirname(__file__), "assets")
-game = Renderer(800, 600, scene, asset_folder, bg=Color.from_hex("#1A1423"))
-# game.asset_manager.register('hero', Asset(AssetType.Still, 'assets/hero.png'), [(i, 100) for i in range(100, 201)])
-game.asset_manager.register("hero2", Asset(AssetType.Still, "hero.jpg"))
-game.asset_manager.register(
-    "small", Asset(AssetType.Still, "small.png", Resampling.NEAREST)
-)
-game.asset_manager.start()

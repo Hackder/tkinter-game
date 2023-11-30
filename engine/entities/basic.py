@@ -2,6 +2,7 @@ from __future__ import annotations
 import copy
 from abc import ABC, abstractmethod
 from tkinter import Canvas
+from tkinter.font import Font
 from typing import Any
 
 from engine.models import Color, FrameContext, Position, Size, Constraints
@@ -114,7 +115,8 @@ class Rect(Entity):
 
     def create(self, canvas: Canvas):
         self.canvas = canvas
-        self.id = canvas.create_rectangle(0, 0, 0, 0)
+        tags = [self.tag] if self.tag is not None else []
+        self.id = canvas.create_rectangle(0, 0, 0, 0, tags=tags)
 
         for component in self.components:
             component.create(self)
@@ -175,16 +177,20 @@ class Rect(Entity):
 
 
 class TextState:
-    def __init__(self, *, text: str, width: float | None, fill: Color):
+    def __init__(self, *, text: str, width: float | None, fill: Color, font: Font):
         self.text = text
         self.width = width
         self.fill = fill
+        self.font = font
 
     def copy(self):
-        return copy.deepcopy(self)
+        return TextState(text=self.text, width=self.width, fill=self.fill, font=self.font.copy())
 
 
 class Text(Entity):
+    state: TextState
+    _state: TextState
+
     def __init__(
         self,
         *,
@@ -193,16 +199,19 @@ class Text(Entity):
         text: str,
         width: float | None = None,
         fill: Color = Color.black(),
+        font: Font | None = None,
         components: list[Component] = [],
     ):
         super().__init__(tag=tag, position=position, components=components)
-        self.state = TextState(text=text, width=width, fill=fill)
+        f = font if font is not None else Font(family="Helvetica", size=12)
+        self.state = TextState(text=text, width=width, fill=fill, font=f)
         self._state = self.state.copy()
         self._size = Size(width=0, height=0)
 
     def create(self, canvas: Canvas):
         self.canvas = canvas
-        self.id = canvas.create_text(0, 0, text="", anchor="nw")
+        tags = [self.tag] if self.tag is not None else []
+        self.id = canvas.create_text(0, 0, text="", anchor="nw", tags=tags)
 
         for component in self.components:
             component.create(self)
@@ -224,6 +233,7 @@ class Text(Entity):
             text=self._state.text,
             fill=self._state.fill.to_hex(),
             width=self._size.width,
+            font=self._state.font,
         )
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
@@ -233,12 +243,14 @@ class Text(Entity):
 
         self._state = state
 
+
+        text_width = self._state.font.measure(state.text)
+        w = constraints.fit_width(text_width)
+
         self.canvas.itemconfigure(
-            self.id, text=state.text, fill=state.fill.to_hex(), width=None
+            self.id, text=state.text, fill=state.fill.to_hex(), width=w
         )
         bbox = self.canvas.bbox(self.id)
-
-        w = constraints.fit_width(bbox[2] - bbox[0] + 6)
         h = constraints.fit_height(bbox[3] - bbox[1])
 
         self._size = Size(width=w, height=h)
@@ -250,7 +262,6 @@ class SpriteState:
     def __init__(self, *, asset_key: str, size: Size | None = None):
         self.asset_key = asset_key
         self.size = size
-
     def copy(self):
         return copy.deepcopy(self)
 
