@@ -82,41 +82,34 @@ class Throwable(Component3d):
             angle = self.speed.length() / (size.width * 4) * math.pi * ctx.delta_time
             angular_speed = Quaternion.from_axis_angle(perpendicular_axis, angle)
             entity.state.rotation = angular_speed * entity.state.rotation
-            rotation_speed = 2*math.pi - self.speed.length() / (size.width * 4) * math.pi * 2
 
             closest_direction = None
-            closest_distance = 0
-            reference = Position3d(0, 0, 1).rotated(entity.state.rotation)
-            for direction in natural_directions:
-                distance = direction.dot(reference)
-                if distance > closest_distance:
-                    closest_direction = direction
-                    closest_distance = distance
+            reference_direction = None
+            perpendicular_axis = self.speed.cross(Position3d(0, 0, 1)).normalized()
+            for reference_base in [Position3d(0, 0, 1), Position3d(0, 1, 0)]:
+                closest_direction = None
+                closest_distance = 0
+                reference = reference_base.rotated(entity.state.rotation)
+                for direction in natural_directions:
+                    distance = direction.dot(reference)
+                    if distance > closest_distance:
+                        closest_direction = direction
+                        closest_distance = distance
 
-            assert closest_direction is not None
+                assert closest_direction is not None
+
+                if closest_direction.z != 0:
+                    reference_direction = reference
+                    break
+            else:
+                reference_direction = Position3d(1, 0, 0).rotated(entity.state.rotation)
+                if reference_direction.dot(Position3d(0, 0, 1)) < 0:
+                    closest_direction = Position3d(0, 0, -1)
+                else:
+                    closest_direction = Position3d(0, 0, 1)
 
             rotation = Quaternion.from_axis_angle(
-                reference.cross(closest_direction), rotation_speed * ctx.delta_time
-            )
-
-            perpendicular_axis = self.speed.cross(Position3d(0, 0, 1)).normalized()
-            angular_speed = Quaternion.from_axis_angle(perpendicular_axis, angle)
-            entity.state.rotation = angular_speed * entity.state.rotation
-
-            closest_direction = None
-            closest_distance = 0
-            reference = Position3d(0, 1, 0).rotated(entity.state.rotation)
-            for direction in natural_directions:
-                distance = direction.dot(reference)
-                if distance > closest_distance:
-                    closest_direction = direction
-                    closest_distance = distance
-
-            assert closest_direction is not None
-
-
-            rotation = rotation * Quaternion.from_axis_angle(
-                reference.cross(closest_direction), rotation_speed * ctx.delta_time
+                reference_direction.cross(closest_direction), math.pi * ctx.delta_time
             )
             entity.state.rotation = rotation * entity.state.rotation
 

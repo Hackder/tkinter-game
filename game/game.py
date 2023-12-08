@@ -11,7 +11,9 @@ from engine.threed.entities.basic import Entity3d
 from engine.threed.entities.components.base import Component3d
 from engine.threed.models import Camera, Position3d, Size3d, Quaternion
 
-from game.scenes import *
+from game.scenes.main_menu import MainMenu
+from game.scenes.metrics import Metrics
+from game.scenes.free_cube import FreeCube
 
 class PaddingEffect(Component):
     def __init__(
@@ -257,9 +259,9 @@ menu_options = [
 
 scene = RootScene(
     children=[
-        free_cube.FreeCube.free_cube(),
-        main_menu.main_menu,
-        metrics.metrics
+        FreeCube.build(),
+        MainMenu.build(),
+        Metrics.build(),
     ]
 )
 
