@@ -41,64 +41,68 @@ class ButtonHover(Component):
         self.entity.state.fill = self.original_fill
         self.entity.child.child.child.state.fill = self.original_text_fill # type: ignore
 
-def menu_button(title: str, on_click: Callable | None = None):
-    return Rect(
-        tag=title,
-        fill=Color.from_hex("#44345B"),
-        components=[
-            *([OnClick(on_click)] if on_click else []),
-            SetCursor('hand1', tag=title),
-            ButtonHover(tag=title),
-            FillTransition(duration=0.2, easing=Easing.ease_in_out)],
-        child=Padding(
-            padding=EdgeInset.symmetric(40, 20),
-            child=Center(
-                child=Text(
-                    tag=title,
-                    text=title,
-                    fill=Color.from_hex("#E0E1DD"),
-                    font=Font(
-                        family="Arial",
-                        size=18,
-                        weight="bold",
-                    ),
-                    components=[FillTransition(duration=0.2, easing=Easing.ease_in_out)]
-                )
-            ),
-        ),
-    )
+class MainMenu:
+    menu_options = [
+        "New Game",
+        "Load Game",
+            ]
 
-menu_options = [
-    "New Game",
-    "Load Game",
-        ]
-
-main_menu = ScreenSizeLayout(
-        child=Padding(
-            padding=EdgeInset.all(50),
-            child=Flex(
-                direction=FlexDirection.Row,
-                children=[
-                    Expanded(),
-                    WidthBox(
-                        width=240,
-                        child=Flex(
-                            direction=FlexDirection.Column,
-                            align=Alignment.Stretch,
-                            gap=20,
-                            children=[
-                                Expanded(),
-                                *[
-                                    menu_button(option)
-                                    for option in menu_options
-                                ],
-                                menu_button("Quit", lambda e, entity: exit()),
-                                Expanded(),
-                            ],
+    @staticmethod
+    def menu_button(title: str, on_click: Callable | None = None):
+        return Rect(
+            tag=title,
+            fill=Color.from_hex("#44345B"),
+            components=[
+                *([OnClick(on_click)] if on_click else []),
+                SetCursor('hand1', tag=title),
+                ButtonHover(tag=title),
+                FillTransition(duration=0.2, easing=Easing.ease_in_out)],
+            child=Padding(
+                padding=EdgeInset.symmetric(40, 20),
+                child=Center(
+                    child=Text(
+                        tag=title,
+                        text=title,
+                        fill=Color.from_hex("#E0E1DD"),
+                        font=Font(
+                            family="Arial",
+                            size=18,
+                            weight="bold",
                         ),
-                    ),
-                    Expanded(),
-                ],
+                        components=[FillTransition(duration=0.2, easing=Easing.ease_in_out)]
+                    )
+                ),
             ),
         )
-    )
+
+    @staticmethod
+    def build():
+        return ScreenSizeLayout(
+            child=Padding(
+                padding=EdgeInset.all(50),
+                child=Flex(
+                    direction=FlexDirection.Row,
+                    children=[
+                        Expanded(),
+                        WidthBox(
+                            width=240,
+                            child=Flex(
+                                direction=FlexDirection.Column,
+                                align=Alignment.Stretch,
+                                gap=20,
+                                children=[
+                                    Expanded(),
+                                    *[
+                                        MainMenu.menu_button(option)
+                                        for option in MainMenu.menu_options
+                                    ],
+                                    MainMenu.menu_button("Quit", lambda e, entity: exit()),
+                                    Expanded(),
+                                ],
+                            ),
+                        ),
+                        Expanded(),
+                    ],
+                ),
+            )
+        )

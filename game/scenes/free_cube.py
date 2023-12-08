@@ -82,7 +82,7 @@ class Throwable(Component3d):
             angle = self.speed.length() / (size.width * 4) * math.pi * ctx.delta_time
             angular_speed = Quaternion.from_axis_angle(perpendicular_axis, angle)
             entity.state.rotation = angular_speed * entity.state.rotation
-            rotation_speed = 4*math.pi - self.speed.length() / (size.width * 4) * math.pi * 2
+            rotation_speed = 2*math.pi - self.speed.length() / (size.width * 4) * math.pi * 2
 
             closest_direction = None
             closest_distance = 0
@@ -166,22 +166,25 @@ class Throwable(Component3d):
     def release(self, e):
         self.dragging = False
 
-free_cube = ScreenSizeLayout(
-            child=Viewport3d(
-                camera=Camera(
-                    position=Position3d(x=0, y=0, z=-500),
-                    fov=30,
-                ),
-                children=[
-                    Dice(
-                        position=Position3d(x=0, y=-60, z=0),
-                        size=Size3d(width=10, height=10, depth=10),
-                        rotation=Quaternion.from_axis_angle(Position3d(0, 1, 1), -math.pi / 4),
-                        components=[
-                            SetCursor('hand2'),
-                            Throwable(),
+class FreeCube:
+    @staticmethod
+    def build():
+        return ScreenSizeLayout(
+                    child=Viewport3d(
+                        camera=Camera(
+                            position=Position3d(x=0, y=0, z=-500),
+                            fov=30,
+                        ),
+                        children=[
+                            Dice(
+                                position=Position3d(x=0, y=-60, z=0),
+                                size=Size3d(width=10, height=10, depth=10),
+                                rotation=Quaternion.from_axis_angle(Position3d(0, 1, 1), -math.pi / 4),
+                                components=[
+                                    SetCursor('hand2'),
+                                    Throwable(),
+                                ],
+                            )
                         ],
                     )
-                ],
-            )
-        )
+                )
