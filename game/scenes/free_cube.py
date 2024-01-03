@@ -81,6 +81,7 @@ class Throwable(Component3d):
             perpendicular_axis = self.speed.cross(Position3d(0, 0, 1)).normalized()
             angle = self.speed.length() / (size.width * 4) * math.pi * ctx.delta_time
             angular_speed = Quaternion.from_axis_angle(perpendicular_axis, angle)
+
             entity.state.rotation = angular_speed * entity.state.rotation
 
             closest_direction = None
@@ -117,9 +118,10 @@ class Throwable(Component3d):
             self.speed.x += dir.x * ctx.delta_time * state.size.width
             self.speed.y += dir.y * ctx.delta_time * state.size.width
 
-            entity.state.position = entity.state.position.add(
-                self.speed.mul(ctx.delta_time)
-            )
+            if self.speed.length() > 3:
+                entity.state.position = entity.state.position.add(
+                    self.speed.mul(ctx.delta_time)
+                )
 
             deceleration = self.speed.mul(-1).max_by_length(self.speed.normalized().mul(-200))
 
