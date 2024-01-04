@@ -29,10 +29,10 @@ class ScreenSizeLayout(Entity):
 
         self.child.create(canvas)
 
-    def destroy(self, entity: Entity):
+    def destroy(self):
         for component in self.components:
             component.destroy(self)
-        self.child.destroy(self)
+        self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         self.child.paint(ctx, position)
@@ -82,10 +82,10 @@ class Padding(Entity):
 
         self.child.create(canvas)
 
-    def destroy(self, entity: Entity):
+    def destroy(self):
         for component in self.components:
             component.destroy(self)
-        self.child.destroy(self)
+        self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = position.add(self.position)
@@ -143,10 +143,10 @@ class Center(Entity):
 
         self.child.create(canvas)
 
-    def destroy(self, entity: Entity):
+    def destroy(self):
         for component in self.components:
             component.destroy(self)
-        self.child.destroy(self)
+        self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)
@@ -188,11 +188,11 @@ class Stack(Entity):
         for child in self.children:
             child.create(canvas)
 
-    def destroy(self, entity: Entity):
+    def destroy(self):
         for component in self.components:
             component.destroy(self)
         for child in self.children:
-            child.destroy(self)
+            child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)
@@ -237,11 +237,11 @@ class Scene(Entity):
         for child in self.children:
             child.create(canvas)
 
-    def destroy(self, entity: Entity):
+    def destroy(self):
         for component in self.components:
             component.destroy(self)
         for child in self.children:
-            child.destroy(self)
+            child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)
@@ -322,11 +322,11 @@ class Flex(Entity):
         for child in self.children:
             child.create(canvas)
 
-    def destroy(self, entity: Entity):
+    def destroy(self):
         for component in self.components:
             component.destroy(self)
         for child in self.children:
-            child.destroy(self)
+            child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)
@@ -454,11 +454,11 @@ class Expanded(Entity):
         if self.child is not None:
             self.child.create(canvas)
 
-    def destroy(self, entity: Entity):
+    def destroy(self):
         for component in self.components:
             component.destroy(self)
         if self.child is not None:
-            self.child.destroy(self)
+            self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)
@@ -500,12 +500,12 @@ class Viewport3d(Entity):
         for child in self.children:
             child.create(canvas)
 
-    def destroy(self, entity: Entity):
+    def destroy(self):
         for component in self.components:
             component.destroy(self)
 
         for child in self.children:
-            child.destroy(self)
+            child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)
@@ -556,10 +556,10 @@ class WidthBox(Entity):
 
         self.child.create(canvas)
 
-    def destroy(self, entity: Entity):
+    def destroy(self):
         for component in self.components:
             component.destroy(self)
-        self.child.destroy(self)
+        self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)

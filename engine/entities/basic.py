@@ -28,7 +28,7 @@ class Entity(ABC):
         pass
 
     @abstractmethod
-    def destroy(self, entity: Entity):
+    def destroy(self):
         pass
 
     @abstractmethod
@@ -58,9 +58,9 @@ class RootScene:
         for child in self.children:
             child.create(canvas)
 
-    def destroy(self, entity: Entity):
+    def destroy(self):
         for child in self.children:
-            child.destroy(self)
+            child.destroy()
 
     def paint(self, ctx: FrameContext):
         for child in self.children:
@@ -124,12 +124,12 @@ class Rect(Entity):
         if self.child is not None:
             self.child.create(canvas)
 
-    def destroy(self, entity: Entity):
+    def destroy(self):
         for component in self.components:
             component.destroy(self)
         self.canvas.delete(self.id)
         if self.child is not None:
-            self.child.destroy(self)
+            self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)
@@ -221,7 +221,7 @@ class Text(Entity):
         for component in self.components:
             component.create(self)
 
-    def destroy(self, entity: Entity):
+    def destroy(self):
         for component in self.components:
             component.destroy(self)
         self.canvas.delete(self.id)
@@ -300,7 +300,7 @@ class Sprite(Entity):
         for component in self.components:
             component.create(self)
 
-    def destroy(self, entity: Entity):
+    def destroy(self):
         for component in self.components:
             component.destroy(self)
         self.canvas.delete(self.id)

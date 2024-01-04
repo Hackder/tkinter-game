@@ -25,7 +25,7 @@ class Entity3d(ABC):
         pass
 
     @abstractmethod
-    def destroy(self, entity: Entity3d):
+    def destroy(self):
         pass
 
     @abstractmethod
@@ -284,7 +284,7 @@ class Dice(BaseCube):
         for component in self.components:
             component.create(self)
 
-    def destroy(self, entity: Entity3d):
+    def destroy(self):
         for component in self.components:
             component.destroy(self)
 

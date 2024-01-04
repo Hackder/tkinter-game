@@ -63,11 +63,11 @@ class EntitySwitch(Entity):
 
         self.current().create(canvas)
 
-    def destroy(self, entity: Entity):
+    def destroy(self):
         for component in self.components:
             component.destroy(self)
 
-        self.current().destroy(self)
+        self.current().destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         for component in self.components:
@@ -84,7 +84,7 @@ class EntitySwitch(Entity):
             curr = self.entities[self.state.current]
             curr.create(self.canvas)
             last = self.entities[self.state._last]
-            last.destroy(self)
+            last.destroy()
             self.state._last = self.state.current
             state._last = self.state._last
             state.current = self.state.current

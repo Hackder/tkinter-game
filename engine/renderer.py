@@ -24,7 +24,7 @@ class Renderer:
 
     def assign_scene(self, scene: RootScene):
         if self.scene is not None:
-            self.scene.destroy(self)()
+            self.scene.destroy()
         self.scene = scene
         self.scene.create(self.canvas)
 
