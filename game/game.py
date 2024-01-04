@@ -6,12 +6,10 @@ from engine.entities.basic import Entity, Rect, RootScene
 from engine.entities.components.base import Component
 from engine.entities.components.events import OnClick
 from engine.entities.layout import (
-    Alignment,
     Expanded,
     Flex,
     FlexDirection,
     Padding,
-    Scene,
     ScreenSizeLayout,
     Stack,
 )

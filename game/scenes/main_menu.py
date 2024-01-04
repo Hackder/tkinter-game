@@ -1,10 +1,13 @@
 from typing import Callable
+from tkinter.font import Font
+from multiprocessing import Process
+from threading import Thread
+
 from engine.animation.utils import Easing
 from engine.entities.components.base import Component
 from engine.entities.components.effects import FillTransition, SetCursor
 from engine.entities.components.events import OnClick
 from engine.entities.layout import (
-    ScreenSizeLayout,
     Padding,
     Flex,
     WidthBox,
@@ -15,7 +18,6 @@ from engine.entities.layout import (
 )
 from engine.entities.basic import Rect, Text, Entity
 from engine.models import Color, EdgeInset
-from tkinter.font import Font
 
 
 class ButtonHover(Component):
@@ -47,11 +49,22 @@ class ButtonHover(Component):
         self.entity.child.child.child.state.fill = self.original_text_fill  # type: ignore
 
 
+class MenuEntry:
+    def __init__(self, title: str, on_click: Callable | None = None):
+        self.title = title
+        self.on_click = on_click
+
+
 class MainMenu:
-    menu_options = [
-        "New Game",
-        "Load Game",
-    ]
+    @staticmethod
+    def callback(path):
+        print("path", path)
+
+    @staticmethod
+    def load_game(e, entity: Entity):
+        from engine.dialogs import Dialogs
+
+        Process(target=Dialogs.open_file_dialog, args=(MainMenu.callback,)).start()
 
     @staticmethod
     def menu_button(title: str, on_click: Callable | None = None):
@@ -59,6 +72,8 @@ class MainMenu:
             tag=title,
             fill=Color.from_hex("#44345B"),
             components=[
+                # menu_button is called only once on creation, therefore we don't
+                # need to worry about lifecycle methods of conditional components (on_create, on_destroy)
                 *([OnClick(on_click)] if on_click else []),
                 SetCursor(cursor="hand1", tag=title),
                 ButtonHover(tag=title),
@@ -86,6 +101,11 @@ class MainMenu:
 
     @staticmethod
     def build():
+        menu_entries = [
+            MenuEntry("New Game", lambda e, entity: print(entity)),
+            MenuEntry("Load Game", MainMenu.load_game),
+        ]
+
         return Padding(
             padding=EdgeInset.all(50),
             child=Flex(
@@ -101,8 +121,8 @@ class MainMenu:
                             children=[
                                 Expanded(),
                                 *[
-                                    MainMenu.menu_button(option)
-                                    for option in MainMenu.menu_options
+                                    MainMenu.menu_button(entry.title, entry.on_click)
+                                    for entry in menu_entries
                                 ],
                                 MainMenu.menu_button("Quit", lambda e, entity: exit()),
                                 Expanded(),

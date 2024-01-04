@@ -261,8 +261,6 @@ class Text(Entity):
         self.last_bbox = bbox
 
         h = constraints.fit_height(bbox[3] - bbox[1])
-        if state.text == "Load Game":
-            print(f"Text: {state.text} {w} {h}")
 
         self._size = Size(width=w, height=h)
 
