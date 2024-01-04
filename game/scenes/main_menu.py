@@ -1,7 +1,6 @@
 from typing import Callable
 from tkinter.font import Font
 from multiprocessing import Process
-from threading import Thread
 
 from engine.animation.utils import Easing
 from engine.entities.components.base import Component
@@ -18,6 +17,7 @@ from engine.entities.layout import (
 )
 from engine.entities.basic import Rect, Text, Entity
 from engine.models import Color, EdgeInset
+from game.state import State
 
 
 class ButtonHover(Component):
@@ -102,7 +102,7 @@ class MainMenu:
     @staticmethod
     def build():
         menu_entries = [
-            MenuEntry("New Game", lambda e, entity: print(entity)),
+            MenuEntry("New Game", lambda *args: setattr(State, "scene", "other")),
             MenuEntry("Load Game", MainMenu.load_game),
         ]
 

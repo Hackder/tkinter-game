@@ -18,6 +18,7 @@ from engine.models import Color, Constraints, EdgeInset, FrameContext, Position,
 from game.scenes.main_menu import MainMenu
 from game.scenes.metrics import Metrics
 from game.scenes.free_cube import FreeCube
+from game.state import State
 
 
 class EntitySwitchState:
@@ -117,13 +118,6 @@ class Hook(Component):
             self._before_layout(entity, ctx, state)
 
 
-class State:
-    def __init__(self):
-        self.scene = "menu"
-
-
-global_state = State()
-
 scene = RootScene(
     children=[
         EntitySwitch(
@@ -131,7 +125,7 @@ scene = RootScene(
             components=[
                 Hook(
                     before_layout=lambda entity, *rest: setattr(
-                        entity.state, "current", global_state.scene
+                        entity.state, "current", State.scene
                     )
                 ),
             ],
@@ -161,20 +155,14 @@ scene = RootScene(
                             size=Size(width=100, height=100),
                             fill=Color.red(),
                             components=[
-                                OnClick(
-                                    lambda *args: setattr(
-                                        global_state, "scene", "other"
-                                    )
-                                ),
+                                OnClick(lambda *args: setattr(State, "scene", "other")),
                             ],
                         ),
                         Rect(
                             size=Size(width=100, height=100),
                             fill=Color.green(),
                             components=[
-                                OnClick(
-                                    lambda *args: setattr(global_state, "scene", "menu")
-                                ),
+                                OnClick(lambda *args: setattr(State, "scene", "menu")),
                             ],
                         ),
                     ],
