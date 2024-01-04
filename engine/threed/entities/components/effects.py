@@ -161,7 +161,7 @@ class Rotation3dTransition(Object3dTransition):
 
 
 class SetCursor(Component3d):
-    def __init__(self, tag: str, cursor="hand2"):
+    def __init__(self, *, tag: str = "", cursor="hand2"):
         self.cursor = cursor
         self.tag = tag
         self.event_ids = []
@@ -169,14 +169,18 @@ class SetCursor(Component3d):
     def create(self, entity):
         self.entity = entity
         if self.tag:
-            id = self.entity.canvas.tag_bind(self.tag, "<Enter>", self.enter, add='+')
-            id2 = self.entity.canvas.tag_bind(self.tag, "<Leave>", self.enter, add='+')
+            id = self.entity.canvas.tag_bind(self.tag, "<Enter>", self.enter, add="+")
+            id2 = self.entity.canvas.tag_bind(self.tag, "<Leave>", self.enter, add="+")
             self.event_ids.append(id)
             self.event_ids.append(id2)
         else:
             for id in entity.ids:
-                event_id = self.entity.canvas.tag_bind(id, "<Enter>", self.enter, add='+')
-                event_id2 = self.entity.canvas.tag_bind(id, "<Leave>", self.leave, add='+')
+                event_id = self.entity.canvas.tag_bind(
+                    id, "<Enter>", self.enter, add="+"
+                )
+                event_id2 = self.entity.canvas.tag_bind(
+                    id, "<Leave>", self.leave, add="+"
+                )
                 self.event_ids.append(event_id)
                 self.event_ids.append(event_id2)
 
@@ -195,4 +199,3 @@ class SetCursor(Component3d):
 
     def leave(self, e):
         self.entity.canvas.config(cursor="")
-

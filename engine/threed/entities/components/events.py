@@ -12,11 +12,15 @@ class OnClick(Component3d):
     def create(self, entity: Entity3d):
         self.entity = entity
         if self.tag:
-            id = self.entity.canvas.tag_bind(self.tag, "<Button-1>", self.on_click, add="+")
+            id = self.entity.canvas.tag_bind(
+                self.tag, "<Button-1>", self.on_click, add="+"
+            )
             self.event_ids.append(id)
         else:
             for id in entity.ids:
-                event_id = self.entity.canvas.tag_bind(id, "<Button-1>", self.on_click, add="+")
+                event_id = self.entity.canvas.tag_bind(
+                    id, "<Button-1>", self.on_click, add="+"
+                )
                 self.event_ids.append(event_id)
 
     def destroy(self):

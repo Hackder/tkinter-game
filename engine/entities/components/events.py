@@ -9,7 +9,9 @@ class OnClick(Component):
 
     def create(self, entity: Entity):
         self.entity = entity
-        self.entity.canvas.tag_bind(self.entity.id, "<Button-1>", self.on_click, add="+")
+        self.entity.canvas.tag_bind(
+            self.entity.id, "<Button-1>", self.on_click, add="+"
+        )
 
     def destroy(self):
         self.entity.canvas.tag_unbind(self.entity.id, "<Button-1>")

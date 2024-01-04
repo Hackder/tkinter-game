@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from engine.threed.entities.basic import Entity3d
 
 
-class Component3d:
+class Component3d(ABC):
     def create(self, entity: Entity3d):
         pass
 

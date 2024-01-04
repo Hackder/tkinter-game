@@ -161,7 +161,8 @@ class Rect(Entity):
         if self.child is not None:
             new_constraints = constraints.limit(state.size)
             self.child._size = self.child.layout(
-                ctx, new_constraints.force_max() if state.size is not None else constraints
+                ctx,
+                new_constraints.force_max() if state.size is not None else constraints,
             )
             if state.size is not None:
                 size = Size(
@@ -184,7 +185,9 @@ class TextState:
         self.font = font
 
     def copy(self):
-        return TextState(text=self.text, width=self.width, fill=self.fill, font=self.font.copy())
+        return TextState(
+            text=self.text, width=self.width, fill=self.fill, font=self.font.copy()
+        )
 
 
 class Text(Entity):
@@ -243,7 +246,6 @@ class Text(Entity):
 
         self._state = state
 
-
         text_width = self._state.font.measure(state.text)
         w = constraints.fit_width(text_width)
 
@@ -262,6 +264,7 @@ class SpriteState:
     def __init__(self, *, asset_key: str, size: Size | None = None):
         self.asset_key = asset_key
         self.size = size
+
     def copy(self):
         return copy.deepcopy(self)
 

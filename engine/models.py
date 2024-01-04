@@ -231,6 +231,7 @@ class Color(Transitionable):
     def yellow() -> Color:
         return Color(r=255, g=255, b=0)
 
+
 class EdgeInset:
     def __init__(self, top: float, right: float, bottom: float, left: float):
         self.top = top

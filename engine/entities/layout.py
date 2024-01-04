@@ -116,9 +116,11 @@ class Padding(Entity):
         child_size = self.child.layout(ctx, c)
         self.child._size = child_size
 
-        return constraints.fit_size(Size(
-            width=child_size.width + x_padding, height=child_size.height + y_padding
-        ))
+        return constraints.fit_size(
+            Size(
+                width=child_size.width + x_padding, height=child_size.height + y_padding
+            )
+        )
 
 
 class Center(Entity):
@@ -274,11 +276,13 @@ class FlexDirection(StrEnum):
         elif self == FlexDirection.Column:
             return "Column"
 
+
 class Alignment(StrEnum):
     Start = "Start"
     Center = "Center"
     End = "End"
     Stretch = "Stretch"
+
 
 class FlexState:
     def __init__(self, *, direction: FlexDirection, align: Alignment, gap: float):
@@ -518,12 +522,14 @@ class Viewport3d(Entity):
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         return constraints.to_max_size()
 
+
 class WidthState:
     def __init__(self, *, width: float):
         self.width = width
 
     def copy(self):
         return copy.deepcopy(self)
+
 
 class WidthBox(Entity):
     state: WidthState
@@ -541,7 +547,6 @@ class WidthBox(Entity):
         self.child = child
         self.state = WidthState(width=width)
         self._state = self.state.copy()
-
 
     def create(self, canvas: Canvas):
         self.canvas = canvas
@@ -562,9 +567,7 @@ class WidthBox(Entity):
         for component in self.components:
             component.before_paint(self, ctx, pos, self._size, self._state)
 
-        child_position = Position(
-            x=pos.x, y=pos.y
-        )
+        child_position = Position(x=pos.x, y=pos.y)
         self.child.paint(ctx, child_position)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
@@ -580,7 +583,4 @@ class WidthBox(Entity):
         child_size = self.child.layout(ctx, c)
         self.child._size = child_size
 
-        return constraints.fit_size(Size(
-            width=state.width, height=child_size.height
-        ))
-
+        return constraints.fit_size(Size(width=state.width, height=child_size.height))

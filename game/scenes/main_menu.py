@@ -17,17 +17,22 @@ from engine.entities.basic import Rect, Text, Entity
 from engine.models import Color, EdgeInset
 from tkinter.font import Font
 
+
 class ButtonHover(Component):
-    def __init__(self, tag: str = ''):
+    def __init__(self, tag: str = ""):
         self.tag = tag
 
     def create(self, entity: Entity):
         self.entity = entity
         self.original_fill = entity.state.fill
-        self.original_text_fill = entity.child.child.child.state.fill # type: ignore
+        self.original_text_fill = entity.child.child.child.state.fill  # type: ignore
         self.tag = self.tag or entity.id
-        self.enter_id = self.entity.canvas.tag_bind(self.tag, "<Enter>", self.on_mouse_enter, add='+')
-        self.leave_id = self.entity.canvas.tag_bind(self.tag, "<Leave>", self.on_mouse_leave, add="+")
+        self.enter_id = self.entity.canvas.tag_bind(
+            self.tag, "<Enter>", self.on_mouse_enter, add="+"
+        )
+        self.leave_id = self.entity.canvas.tag_bind(
+            self.tag, "<Leave>", self.on_mouse_leave, add="+"
+        )
 
     def destroy(self):
         self.entity.canvas.tag_unbind(self.tag, "<Enter>", self.enter_id)
@@ -35,17 +40,18 @@ class ButtonHover(Component):
 
     def on_mouse_enter(self, e):
         self.entity.state.fill = Color.white()
-        self.entity.child.child.child.state.fill = Color.black() # type: ignore
+        self.entity.child.child.child.state.fill = Color.black()  # type: ignore
 
     def on_mouse_leave(self, e):
         self.entity.state.fill = self.original_fill
-        self.entity.child.child.child.state.fill = self.original_text_fill # type: ignore
+        self.entity.child.child.child.state.fill = self.original_text_fill  # type: ignore
+
 
 class MainMenu:
     menu_options = [
         "New Game",
         "Load Game",
-            ]
+    ]
 
     @staticmethod
     def menu_button(title: str, on_click: Callable | None = None):
@@ -54,9 +60,10 @@ class MainMenu:
             fill=Color.from_hex("#44345B"),
             components=[
                 *([OnClick(on_click)] if on_click else []),
-                SetCursor('hand1', tag=title),
+                SetCursor(cursor="hand1", tag=title),
                 ButtonHover(tag=title),
-                FillTransition(duration=0.2, easing=Easing.ease_in_out)],
+                FillTransition(duration=0.2, easing=Easing.ease_in_out),
+            ],
             child=Padding(
                 padding=EdgeInset.symmetric(40, 20),
                 child=Center(
@@ -69,7 +76,9 @@ class MainMenu:
                             size=18,
                             weight="bold",
                         ),
-                        components=[FillTransition(duration=0.2, easing=Easing.ease_in_out)]
+                        components=[
+                            FillTransition(duration=0.2, easing=Easing.ease_in_out)
+                        ],
                     )
                 ),
             ),
@@ -96,7 +105,9 @@ class MainMenu:
                                         MainMenu.menu_button(option)
                                         for option in MainMenu.menu_options
                                     ],
-                                    MainMenu.menu_button("Quit", lambda e, entity: exit()),
+                                    MainMenu.menu_button(
+                                        "Quit", lambda e, entity: exit()
+                                    ),
                                     Expanded(),
                                 ],
                             ),

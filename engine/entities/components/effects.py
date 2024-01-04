@@ -333,16 +333,17 @@ class SquareShake(Component):
         position.x += self.offset_x
         position.y += self.offset_y
 
+
 class SetCursor(Component):
-    def __init__(self, cursor="hand2", tag: str = ''):
+    def __init__(self, *, cursor="hand2", tag: str = ""):
         self.cursor = cursor
         self.tag = tag
 
     def create(self, entity):
         self.entity = entity
         self.tag = self.tag or entity.id
-        self.enter_id = entity.canvas.tag_bind(self.tag, "<Enter>", self.enter, add='+')
-        self.leave_id = entity.canvas.tag_bind(self.tag, "<Leave>", self.leave, add='+')
+        self.enter_id = entity.canvas.tag_bind(self.tag, "<Enter>", self.enter, add="+")
+        self.leave_id = entity.canvas.tag_bind(self.tag, "<Leave>", self.leave, add="+")
 
     def destroy(self):
         self.entity.canvas.tag_unbind(self.tag, "<Enter>", self.enter_id)
@@ -353,4 +354,3 @@ class SetCursor(Component):
 
     def leave(self, e):
         self.entity.canvas.config(cursor="")
-

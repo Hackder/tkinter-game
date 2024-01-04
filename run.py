@@ -13,6 +13,7 @@ from engine.assets import Asset, AssetType
 renderer = Renderer(800, 600, "assets", Color.from_hex("#1A1423"))
 
 from game.game import scene
+
 renderer.assign_scene(scene)
 
 asset_folder = os.path.join(os.path.dirname(__file__), "assets")

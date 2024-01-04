@@ -15,6 +15,7 @@ from game.scenes.main_menu import MainMenu
 from game.scenes.metrics import Metrics
 from game.scenes.free_cube import FreeCube
 
+
 class PaddingEffect(Component):
     def __init__(
         self, *, start: float, end: float, duration: float, repeat_times: int = 0
@@ -176,20 +177,6 @@ class EntitySwitcher(Entity):
         return child_size
 
 
-class GrabCursor(Component3d):
-    def create(self, entity):
-        self.entity = entity
-        for id in entity.ids:
-            entity.canvas.tag_bind(id, "<Enter>", self.enter)
-            entity.canvas.tag_bind(id, "<Leave>", self.leave)
-
-    def enter(self, e):
-        self.entity.canvas.config(cursor="hand2")
-
-    def leave(self, e):
-        self.entity.canvas.config(cursor="")
-
-
 class Draggable(Component3d):
     def __init__(self):
         self.dragging = False
@@ -239,8 +226,6 @@ class Draggable(Component3d):
         self.dragging = False
 
 
-
-
 class SwitchOnClick(Component):
     def create(self, entity):
         self.entity = entity
@@ -251,11 +236,6 @@ class SwitchOnClick(Component):
             self.entity.entities
         )
 
-menu_options = [
-        "New game",
-        "Load game",
-        "Exit"
-        ]
 
 scene = RootScene(
     children=[
@@ -264,4 +244,3 @@ scene = RootScene(
         Metrics.build(),
     ]
 )
-

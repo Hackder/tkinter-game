@@ -29,7 +29,9 @@ class Position3d(Transitionable):
         if type(other) == float or type(other) == int:
             return Position3d(x=self.x * other, y=self.y * other, z=self.z * other)
         else:
-            return Position3d(x=self.x * other.x, y=self.y * other.y, z=self.z * other.z)
+            return Position3d(
+                x=self.x * other.x, y=self.y * other.y, z=self.z * other.z
+            )
 
     def normalized(self):
         length = self.length()
@@ -228,7 +230,6 @@ class Camera:
 
         target_x = near_plane_x * (plane_z + focal_z) / focal_z
         target_y = near_plane_y * (plane_z + focal_z) / focal_z / aspect_ratio
-
 
         return Position3d(
             x=target_x,

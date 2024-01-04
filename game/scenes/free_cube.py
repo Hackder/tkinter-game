@@ -18,6 +18,7 @@ natural_directions = [
     Position3d(0, 0, -1),
 ]
 
+
 class Throwable(Component3d):
     def __init__(self, initial_speed=Position3d(x=0, y=0, z=0)):
         self.dragging = False
@@ -123,7 +124,9 @@ class Throwable(Component3d):
                     self.speed.mul(ctx.delta_time)
                 )
 
-            deceleration = self.speed.mul(-1).max_by_length(self.speed.normalized().mul(-200))
+            deceleration = self.speed.mul(-1).max_by_length(
+                self.speed.normalized().mul(-200)
+            )
 
             self.speed.x += deceleration.x * ctx.delta_time
             self.speed.y += deceleration.y * ctx.delta_time
@@ -161,25 +164,28 @@ class Throwable(Component3d):
     def release(self, e):
         self.dragging = False
 
+
 class FreeCube:
     @staticmethod
     def build():
         return ScreenSizeLayout(
-                    child=Viewport3d(
-                        camera=Camera(
-                            position=Position3d(x=0, y=0, z=-500),
-                            fov=30,
+            child=Viewport3d(
+                camera=Camera(
+                    position=Position3d(x=0, y=0, z=-500),
+                    fov=30,
+                ),
+                children=[
+                    Dice(
+                        position=Position3d(x=0, y=-60, z=0),
+                        size=Size3d(width=10, height=10, depth=10),
+                        rotation=Quaternion.from_axis_angle(
+                            Position3d(0, 1, 1), -math.pi / 4
                         ),
-                        children=[
-                            Dice(
-                                position=Position3d(x=0, y=-60, z=0),
-                                size=Size3d(width=10, height=10, depth=10),
-                                rotation=Quaternion.from_axis_angle(Position3d(0, 1, 1), -math.pi / 4),
-                                components=[
-                                    SetCursor('hand2'),
-                                    Throwable(),
-                                ],
-                            )
+                        components=[
+                            SetCursor(cursor="hand1"),
+                            Throwable(),
                         ],
                     )
-                )
+                ],
+            )
+        )

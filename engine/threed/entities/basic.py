@@ -274,8 +274,7 @@ class Dice(BaseCube):
         for _ in range(27):
             self.ids.append(
                 canvas.create_polygon(
-                    0, 0, 0, 0, 0, 0, 0, 0, fill="white", outline="black",
-                    tags=tags
+                    0, 0, 0, 0, 0, 0, 0, 0, fill="white", outline="black", tags=tags
                 )
             )
 
