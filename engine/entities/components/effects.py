@@ -345,7 +345,7 @@ class SetCursor(Component):
         self.enter_id = entity.canvas.tag_bind(self.tag, "<Enter>", self.enter, add="+")
         self.leave_id = entity.canvas.tag_bind(self.tag, "<Leave>", self.leave, add="+")
 
-    def destroy(self):
+    def destroy(self, entity: Entity):
         self.entity.canvas.tag_unbind(self.tag, "<Enter>", self.enter_id)
         self.entity.canvas.tag_unbind(self.tag, "<Leave>", self.leave_id)
 

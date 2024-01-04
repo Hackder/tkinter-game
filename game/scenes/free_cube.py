@@ -168,24 +168,22 @@ class Throwable(Component3d):
 class FreeCube:
     @staticmethod
     def build():
-        return ScreenSizeLayout(
-            child=Viewport3d(
-                camera=Camera(
-                    position=Position3d(x=0, y=0, z=-500),
-                    fov=30,
-                ),
-                children=[
-                    Dice(
-                        position=Position3d(x=0, y=-60, z=0),
-                        size=Size3d(width=10, height=10, depth=10),
-                        rotation=Quaternion.from_axis_angle(
-                            Position3d(0, 1, 1), -math.pi / 4
-                        ),
-                        components=[
-                            SetCursor(cursor="hand1"),
-                            Throwable(),
-                        ],
-                    )
-                ],
-            )
+        return Viewport3d(
+            camera=Camera(
+                position=Position3d(x=0, y=0, z=-500),
+                fov=30,
+            ),
+            children=[
+                Dice(
+                    position=Position3d(x=0, y=-60, z=0),
+                    size=Size3d(width=10, height=10, depth=10),
+                    rotation=Quaternion.from_axis_angle(
+                        Position3d(0, 1, 1), -math.pi / 4
+                    ),
+                    components=[
+                        SetCursor(cursor="hand1"),
+                        Throwable(),
+                    ],
+                )
+            ],
         )

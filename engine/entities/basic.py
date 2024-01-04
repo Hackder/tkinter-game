@@ -28,7 +28,7 @@ class Entity(ABC):
         pass
 
     @abstractmethod
-    def destroy(self):
+    def destroy(self, entity: Entity):
         pass
 
     @abstractmethod
@@ -58,9 +58,9 @@ class RootScene:
         for child in self.children:
             child.create(canvas)
 
-    def destroy(self):
+    def destroy(self, entity: Entity):
         for child in self.children:
-            child.destroy()
+            child.destroy(self)
 
     def paint(self, ctx: FrameContext):
         for child in self.children:
@@ -124,12 +124,12 @@ class Rect(Entity):
         if self.child is not None:
             self.child.create(canvas)
 
-    def destroy(self):
+    def destroy(self, entity: Entity):
         for component in self.components:
             component.destroy(self)
         self.canvas.delete(self.id)
         if self.child is not None:
-            self.child.destroy()
+            self.child.destroy(self)
 
     def paint(self, ctx: FrameContext, position: Position):
         pos = self.position.add(position)
@@ -147,6 +147,8 @@ class Rect(Entity):
             outline=self._state.outline.to_hex(),
             width=self._state.outline_width,
         )
+
+        self.canvas.tag_raise(self.id)
 
         if self.child is not None:
             self.child.paint(ctx, pos)
@@ -219,7 +221,7 @@ class Text(Entity):
         for component in self.components:
             component.create(self)
 
-    def destroy(self):
+    def destroy(self, entity: Entity):
         for component in self.components:
             component.destroy(self)
         self.canvas.delete(self.id)
@@ -238,6 +240,7 @@ class Text(Entity):
             width=self._size.width,
             font=self._state.font,
         )
+        self.canvas.tag_raise(self.id)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         state = self.state.copy()
@@ -250,10 +253,16 @@ class Text(Entity):
         w = constraints.fit_width(text_width)
 
         self.canvas.itemconfigure(
-            self.id, text=state.text, fill=state.fill.to_hex(), width=w
+            self.id, text=state.text, fill=state.fill.to_hex(), width=w, font=state.font
         )
         bbox = self.canvas.bbox(self.id)
+        if bbox is None:
+            bbox = self.last_bbox
+        self.last_bbox = bbox
+
         h = constraints.fit_height(bbox[3] - bbox[1])
+        if state.text == "Load Game":
+            print(f"Text: {state.text} {w} {h}")
 
         self._size = Size(width=w, height=h)
 
@@ -293,7 +302,7 @@ class Sprite(Entity):
         for component in self.components:
             component.create(self)
 
-    def destroy(self):
+    def destroy(self, entity: Entity):
         for component in self.components:
             component.destroy(self)
         self.canvas.delete(self.id)
@@ -309,6 +318,7 @@ class Sprite(Entity):
         )
         self.canvas.coords(self.id, pos.x, pos.y)
         self.canvas.itemconfigure(self.id, image=asset)
+        self.canvas.tag_raise(self.id)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         state = self.state.copy()

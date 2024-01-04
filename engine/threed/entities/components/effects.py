@@ -184,15 +184,17 @@ class SetCursor(Component3d):
                 self.event_ids.append(event_id)
                 self.event_ids.append(event_id2)
 
-    def destroy(self):
+    def destroy(self, entity: Entity3d):
         if self.tag:
             for id in self.event_ids:
                 self.entity.canvas.tag_unbind(self.tag, "<Enter>", id)
                 self.entity.canvas.tag_unbind(self.tag, "<Leave>", id)
         else:
-            for entity_id, id in zip(self.entity.ids, self.event_ids):
-                self.entity.canvas.tag_unbind(entity_id, "<Enter>", id)
-                self.entity.canvas.tag_unbind(entity_id, "<Leave>", id)
+            for i, id in enumerate(self.entity.ids):
+                self.entity.canvas.tag_unbind(id, "<Enter>", self.event_ids[i * 2])
+                self.entity.canvas.tag_unbind(id, "<Leave>", self.event_ids[i * 2 + 1])
+
+        self.event_ids = []
 
     def enter(self, e):
         self.entity.canvas.config(cursor=self.cursor)

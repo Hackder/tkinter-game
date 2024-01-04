@@ -34,7 +34,7 @@ class ButtonHover(Component):
             self.tag, "<Leave>", self.on_mouse_leave, add="+"
         )
 
-    def destroy(self):
+    def destroy(self, entity: Entity):
         self.entity.canvas.tag_unbind(self.tag, "<Enter>", self.enter_id)
         self.entity.canvas.tag_unbind(self.tag, "<Leave>", self.leave_id)
 
@@ -86,34 +86,30 @@ class MainMenu:
 
     @staticmethod
     def build():
-        return ScreenSizeLayout(
-            child=Padding(
-                padding=EdgeInset.all(50),
-                child=Flex(
-                    direction=FlexDirection.Row,
-                    children=[
-                        Expanded(),
-                        WidthBox(
-                            width=240,
-                            child=Flex(
-                                direction=FlexDirection.Column,
-                                align=Alignment.Stretch,
-                                gap=20,
-                                children=[
-                                    Expanded(),
-                                    *[
-                                        MainMenu.menu_button(option)
-                                        for option in MainMenu.menu_options
-                                    ],
-                                    MainMenu.menu_button(
-                                        "Quit", lambda e, entity: exit()
-                                    ),
-                                    Expanded(),
+        return Padding(
+            padding=EdgeInset.all(50),
+            child=Flex(
+                direction=FlexDirection.Row,
+                children=[
+                    Expanded(),
+                    WidthBox(
+                        width=240,
+                        child=Flex(
+                            direction=FlexDirection.Column,
+                            align=Alignment.Stretch,
+                            gap=20,
+                            children=[
+                                Expanded(),
+                                *[
+                                    MainMenu.menu_button(option)
+                                    for option in MainMenu.menu_options
                                 ],
-                            ),
+                                MainMenu.menu_button("Quit", lambda e, entity: exit()),
+                                Expanded(),
+                            ],
                         ),
-                        Expanded(),
-                    ],
-                ),
-            )
+                    ),
+                    Expanded(),
+                ],
+            ),
         )

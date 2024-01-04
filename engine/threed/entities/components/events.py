@@ -23,7 +23,7 @@ class OnClick(Component3d):
                 )
                 self.event_ids.append(event_id)
 
-    def destroy(self):
+    def destroy(self, entity: Entity):
         if self.tag:
             for id in self.event_ids:
                 self.entity.canvas.tag_unbind(self.tag, "<Button-1>", id)

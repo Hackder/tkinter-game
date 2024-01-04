@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 import copy
 from abc import ABC, abstractmethod
 from tkinter import Canvas
+from typing import Any, Callable
+
 from engine.threed.models import Position3d, Quaternion, Camera, Size3d
 from engine.models import FrameContext
 from engine.threed.entities.components.base import Component3d
-from typing import Any, Callable
 
 
 class Entity3d(ABC):
@@ -22,7 +25,7 @@ class Entity3d(ABC):
         pass
 
     @abstractmethod
-    def destroy(self):
+    def destroy(self, entity: Entity3d):
         pass
 
     @abstractmethod
@@ -72,7 +75,7 @@ class BaseCube(Entity3d):
         pass
 
     @abstractmethod
-    def destroy(self):
+    def destroy(self, entity: Entity3d):
         pass
 
     def paint(
@@ -281,12 +284,14 @@ class Dice(BaseCube):
         for component in self.components:
             component.create(self)
 
-    def destroy(self):
+    def destroy(self, entity: Entity3d):
         for component in self.components:
             component.destroy(self)
 
         for id in self.ids:
             self.canvas.delete(id)
+
+        self.ids = []
 
     def paint(
         self,
