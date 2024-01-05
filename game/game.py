@@ -155,14 +155,22 @@ scene = RootScene(
                             size=Size(width=100, height=100),
                             fill=Color.red(),
                             components=[
-                                OnClick(lambda *args: setattr(State, "scene", "other")),
+                                OnClick(
+                                    callback=lambda *args: setattr(
+                                        State, "scene", "other"
+                                    )
+                                ),
                             ],
                         ),
                         Rect(
                             size=Size(width=100, height=100),
                             fill=Color.green(),
                             components=[
-                                OnClick(lambda *args: setattr(State, "scene", "menu")),
+                                OnClick(
+                                    callback=lambda *args: setattr(
+                                        State, "scene", "menu"
+                                    )
+                                ),
                             ],
                         ),
                     ],

@@ -39,6 +39,7 @@ class ButtonHover(Component):
     def destroy(self, entity: Entity):
         self.entity.canvas.tag_unbind(self.tag, "<Enter>", self.enter_id)
         self.entity.canvas.tag_unbind(self.tag, "<Leave>", self.leave_id)
+        self.on_mouse_leave(None)
 
     def on_mouse_enter(self, e):
         self.entity.state.fill = Color.white()
@@ -74,7 +75,7 @@ class MainMenu:
             components=[
                 # menu_button is called only once on creation, therefore we don't
                 # need to worry about lifecycle methods of conditional components (on_create, on_destroy)
-                *([OnClick(on_click)] if on_click else []),
+                *([OnClick(tag=title, callback=on_click)] if on_click else []),
                 SetCursor(cursor="hand1", tag=title),
                 ButtonHover(tag=title),
                 FillTransition(duration=0.2, easing=Easing.ease_in_out),

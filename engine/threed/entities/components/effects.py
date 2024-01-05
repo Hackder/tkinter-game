@@ -195,6 +195,7 @@ class SetCursor(Component3d):
                 self.entity.canvas.tag_unbind(id, "<Leave>", self.event_ids[i * 2 + 1])
 
         self.event_ids = []
+        self.leave(None)
 
     def enter(self, e):
         self.entity.canvas.config(cursor=self.cursor)

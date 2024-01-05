@@ -34,6 +34,8 @@ class Renderer:
 
         now = timer()
         delta_time = now - self.last_frame
+        if delta_time > 1 / 3:
+            delta_time = 0
         self.last_frame = now
 
         ctx = FrameContext(

@@ -96,6 +96,11 @@ class ObjectTransition(Component, ABC):
 
         self.setter(entity, ctx, position, size, state, self.value)
 
+    def destroy(self, entity: Entity):
+        self.last_value = None
+        self.target_value = None
+        self.value = None
+
 
 class ObjectLayoutTransition(Component, ABC):
     def __init__(
@@ -348,6 +353,7 @@ class SetCursor(Component):
     def destroy(self, entity: Entity):
         self.entity.canvas.tag_unbind(self.tag, "<Enter>", self.enter_id)
         self.entity.canvas.tag_unbind(self.tag, "<Leave>", self.leave_id)
+        self.leave(None)
 
     def enter(self, e):
         self.entity.canvas.config(cursor=self.cursor)
