@@ -7,6 +7,15 @@ from PIL import Image, ImageTk
 
 class AssetType(StrEnum):
     Still = "still"
+    AnimatedTileset = "animated_tileset"
+
+
+@dataclass(frozen=True)
+class TiledAnimation:
+    tile_width: int
+    tile_height: int
+    tile_count: int
+    fps: float
 
 
 @dataclass(frozen=True)
@@ -14,6 +23,7 @@ class Asset:
     type: AssetType
     path: str
     resampling: Image.Resampling | None = None
+    animation: TiledAnimation | None = None
 
 
 class AssetManader:
@@ -21,6 +31,9 @@ class AssetManader:
         self.asset_folder = asset_folder
         self.raw_assets: dict[str, Asset] = dict()
         self.assets: dict[tuple[str, int, int], ImageTk.PhotoImage] = dict()
+        self.animated_assets: dict[
+            tuple[str, int, int], list[ImageTk.PhotoImage]
+        ] = dict()
         self.queue = list()
         self.thread = Thread(target=self.__load_thread, daemon=True)
         self.loading = False
@@ -35,6 +48,8 @@ class AssetManader:
 
             if asset.type == AssetType.Still:
                 self.__load_still(key, asset, width, height)
+            elif asset.type == AssetType.AnimatedTileset:
+                self.__load_animated_tileset(key, asset, width, height)
         self.loading = False
 
     def start(self):
@@ -61,7 +76,30 @@ class AssetManader:
         image = image.resize((width, height), resample=asset.resampling)
         tk_image = ImageTk.PhotoImage(image, width=width, height=height)
         self.assets[(key, width, height)] = tk_image
-        return tk_image
+
+    def __load_animated_tileset(self, key: str, asset: Asset, width: int, height: int):
+        animation = asset.animation
+        if animation is None:
+            raise Exception(f"Animation not specified for animated asset {key}")
+
+        image = Image.open(os.path.join(self.asset_folder, asset.path))
+
+        tk_images: list[ImageTk.PhotoImage] = []
+        for i in range(animation.tile_count):
+            tile = image.copy()
+            tile.crop(
+                (
+                    animation.tile_width * i,
+                    0,
+                    animation.tile_width * (i + 1),
+                    animation.tile_height,
+                )
+            )
+            tile.resize((width, height), resample=asset.resampling)
+            tk_image = ImageTk.PhotoImage(tile, width=width, height=height)
+            tk_images.append(tk_image)
+
+        self.animated_assets[(key, width, height)] = tk_images
 
     def get(self, key: str, width: int, height: int) -> ImageTk.PhotoImage | None:
         cache = self.assets.get((key, width, height), None)
@@ -75,3 +113,24 @@ class AssetManader:
 
         if asset.type == AssetType.Still:
             return self.__load_still(key, asset, width, height)
+
+        print(f"WARN: Asset {key} ({asset.type}) is not a still image")
+        return None
+
+    def get_animated(
+        self, key: str, width: int, height: int
+    ) -> list[ImageTk.PhotoImage] | None:
+        cache = self.animated_assets.get((key, width, height), None)
+        if cache is not None:
+            return cache
+
+        asset = self.raw_assets.get(key, None)
+        if asset is None:
+            print(f"WARN: Asset {key} not found")
+            return None
+
+        if asset.type == AssetType.AnimatedTileset:
+            return self.__load_animated_tileset(key, asset, width, height)
+
+        print(f"WARN: Asset {key} ({asset.type}) is not an animated tileset")
+        return None

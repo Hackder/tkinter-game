@@ -121,6 +121,9 @@ class Constraints:
     def to_max_size(self) -> Size:
         return Size(width=self.max_width, height=self.max_height)
 
+    def to_min_size(self) -> Size:
+        return Size(width=self.min_width, height=self.min_height)
+
     def fit_size(self, size: Size | None) -> Size:
         if size is None:
             return Size(width=self.min_width, height=self.min_height)

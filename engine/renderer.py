@@ -4,6 +4,7 @@ from tkinter import Tk, Canvas
 from engine.entities.basic import RootScene
 from engine.models import Color, FrameContext
 from engine.assets import AssetManader
+from game.theme_colors import ThemeColors
 
 
 class Renderer:
@@ -12,7 +13,7 @@ class Renderer:
         window_width: float,
         window_height: float,
         asset_folder: str,
-        bg: Color = Color.white(),
+        bg: Color = ThemeColors.foreground(),
     ):
         self.scene: RootScene | None = None
         self.root = Tk()

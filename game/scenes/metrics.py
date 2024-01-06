@@ -1,14 +1,14 @@
 from engine.entities.basic import Rect, Text
 from engine.entities.layout import (
-    ScreenSizeLayout,
     Padding,
     Flex,
     FlexDirection,
     Scene,
-    WidthBox,
+    SizeBox,
 )
 from engine.models import Color, EdgeInset
 from engine.entities.components.debug import FpsCounter, AssetLoaderStats
+from game.theme_colors import ThemeColors
 
 
 class Metrics:
@@ -18,10 +18,10 @@ class Metrics:
             padding=EdgeInset.all(20),
             child=Scene(
                 children=[
-                    WidthBox(
+                    SizeBox(
                         width=200,
                         child=Rect(
-                            fill=Color.black(),
+                            fill=ThemeColors.foreground_inverse(),
                             outline=Color.gray(),
                             child=Padding(
                                 padding=EdgeInset.symmetric(10, 10),
@@ -30,12 +30,12 @@ class Metrics:
                                     gap=5,
                                     children=[
                                         Text(
-                                            fill=Color.white(),
+                                            fill=ThemeColors.foreground(),
                                             components=[FpsCounter()],
                                             text="",
                                         ),
                                         Text(
-                                            fill=Color.white(),
+                                            fill=ThemeColors.foreground(),
                                             components=[
                                                 AssetLoaderStats(),
                                             ],

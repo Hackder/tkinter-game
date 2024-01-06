@@ -410,12 +410,16 @@ class Flex(Entity):
 
             if state.direction == FlexDirection.Row:
                 c.max_width = rest * child.state.flex / flex_total  # type: ignore
+                c.min_width = c.max_width
                 child._size = child.layout(ctx, c)
                 main_size = constraints.max_width
+                max_cross = max(max_cross, child._size.height)
             else:
                 c.max_height = rest * child.state.flex / flex_total  # type: ignore
+                c.min_height = c.max_height
                 child._size = child.layout(ctx, c)
                 main_size = constraints.max_height
+                max_cross = max(max_cross, child._size.width)
 
         if state.direction == FlexDirection.Row:
             return orig_c.fit_size(Size(width=main_size, height=max_cross))
@@ -472,8 +476,9 @@ class Expanded(Entity):
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         if self.child is not None:
             self.child._size = self.child.layout(ctx, constraints)
+            return self.child._size
 
-        return constraints.to_max_size()
+        return constraints.to_min_size()
 
 
 class Viewport3d(Entity):
@@ -523,29 +528,31 @@ class Viewport3d(Entity):
         return constraints.to_max_size()
 
 
-class WidthState:
-    def __init__(self, *, width: float):
+class SizeBoxState:
+    def __init__(self, *, width: float | None, height: float | None):
         self.width = width
+        self.height = height
 
     def copy(self):
         return copy.deepcopy(self)
 
 
-class WidthBox(Entity):
-    state: WidthState
+class SizeBox(Entity):
+    state: SizeBoxState
 
     def __init__(
         self,
         *,
         tag: str | None = None,
         position: Position = Position(x=0, y=0),
-        width: float,
+        width: float | None = None,
+        height: float | None = None,
         components: list[Component] = [],
         child: Entity,
     ):
         super().__init__(tag=tag, position=position, components=components)
         self.child = child
-        self.state = WidthState(width=width)
+        self.state = SizeBoxState(width=width, height=height)
         self._state = self.state.copy()
 
     def create(self, canvas: Canvas):
@@ -577,10 +584,17 @@ class WidthBox(Entity):
         self._state = state
 
         c = constraints.copy()
-        c.min_width = state.width
-        c.max_width = state.width
+        if state.width is not None:
+            c.min_width = state.width
+            c.max_width = state.width
+        if state.height is not None:
+            c.min_height = state.height
+            c.max_height = state.height
 
         child_size = self.child.layout(ctx, c)
         self.child._size = child_size
 
-        return constraints.fit_size(Size(width=state.width, height=child_size.height))
+        w = state.width or child_size.width
+        h = state.height or child_size.height
+
+        return constraints.fit_size(Size(width=w, height=h))
