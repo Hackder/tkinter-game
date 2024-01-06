@@ -1,6 +1,6 @@
 import copy
 from tkinter import Canvas
-from typing import Any
+from typing import Any, Callable
 
 from engine.entities.basic import Entity, Rect, RootScene
 from engine.entities.components.base import Component
@@ -40,7 +40,7 @@ class EntitySwitch(Entity):
         position: Position = Position(x=0, y=0),
         components: list[Component] = [],
         current: str,
-        entities: dict[str, Entity],
+        entities: dict[str, Callable[[], Entity]],
     ):
         super().__init__(tag=tag, position=position, components=components)
         self.state = EntitySwitchState(current=current)
@@ -48,32 +48,26 @@ class EntitySwitch(Entity):
         self.entities = entities
         self._size = Size(width=0, height=0)
 
-    def current(self) -> Entity:
-        if self.state.current not in self.entities:
-            raise ValueError(
-                f"EntitySwitch: no entity with name '{self.state.current}'"
-            )
-
-        return self.entities[self.state.current]
-
     def create(self, canvas: Canvas):
         self.canvas = canvas
+
         for component in self.components:
             component.create(self)
 
-        self.current().create(canvas)
+        self.current = self.entities[self.state.current]()
+        self.current.create(canvas)
 
     def destroy(self):
         for component in self.components:
             component.destroy(self)
 
-        self.current().destroy()
+        self.current.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
         for component in self.components:
             component.before_paint(self, ctx, position, self._size, self._state)
 
-        self.entities[self._state.current].paint(ctx, position)
+        self.current.paint(ctx, position)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         state = self.state.copy()
@@ -81,18 +75,18 @@ class EntitySwitch(Entity):
             component.before_layout(self, ctx, state)
 
         if self.state.current != self.state._last:
-            curr = self.entities[self.state.current]
-            curr.create(self.canvas)
-            last = self.entities[self.state._last]
-            last.destroy()
+            self.current.destroy()
+            self.current = self.entities[self.state.current]()
+            self.current.create(self.canvas)
+
             self.state._last = self.state.current
             state._last = self.state._last
             state.current = self.state.current
 
         self._state = state
 
-        child_size = self.current().layout(ctx, constraints)
-        self.current()._size = child_size
+        child_size = self.current.layout(ctx, constraints)
+        self.current._size = child_size
 
         return child_size
 
@@ -130,7 +124,7 @@ scene = RootScene(
                 ),
             ],
             entities={
-                "menu": ScreenSizeLayout(
+                "menu": lambda: ScreenSizeLayout(
                     child=Stack(
                         children=[
                             FreeCube.build(),
@@ -139,7 +133,7 @@ scene = RootScene(
                         ]
                     )
                 ),
-                "other": ScreenSizeLayout(
+                "other": lambda: ScreenSizeLayout(
                     child=Metrics.build(),
                 ),
             },
