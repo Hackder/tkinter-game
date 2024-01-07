@@ -2,7 +2,7 @@ import random
 
 from collections.abc import Callable
 from tkinter.font import Font
-from typing import Literal, Union
+from typing import Literal
 from engine.animation.utils import Easing
 from engine.entities.basic import Entity, Rect, Text
 from engine.entities.components.base import Component
@@ -35,8 +35,8 @@ class ButtonHover(Component):
         self.on_mouse_leave(None)
 
     def on_mouse_enter(self, e):
-        self.entity.state.fill = ThemeColors.foreground()
-        self.entity.child.child.child.state.fill = ThemeColors.foreground_inverse()  # type: ignore
+        self.entity.state.fill = ThemeColors.fg()
+        self.entity.child.child.child.state.fill = ThemeColors.fg_inverse()  # type: ignore
 
     def on_mouse_leave(self, e):
         self.entity.state.fill = self.original_fill
@@ -52,7 +52,7 @@ class Button:
         fill=ThemeColors.primary(),
         on_click: Callable | None = None,
         font: Font | None = None,
-        size: Union[Literal["lg"], Literal["md"], Literal["sm"]] = "lg"
+        size: Literal["sm", "md", "lg"] = "md",
     ) -> Entity:
         tag = tag or random.randbytes(16).hex()
 
@@ -74,7 +74,7 @@ class Button:
                     child=Text(
                         tag=tag,
                         text=title,
-                        fill=ThemeColors.foreground(),
+                        fill=ThemeColors.fg(),
                         font=font
                         or Font(
                             family="Arial",

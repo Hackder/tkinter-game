@@ -21,7 +21,7 @@ class Metrics:
                     SizeBox(
                         width=200,
                         child=Rect(
-                            fill=ThemeColors.foreground_inverse(),
+                            fill=ThemeColors.fg_inverse(),
                             outline=Color.gray(),
                             child=Padding(
                                 padding=EdgeInset.symmetric(10, 10),
@@ -30,12 +30,12 @@ class Metrics:
                                     gap=5,
                                     children=[
                                         Text(
-                                            fill=ThemeColors.foreground(),
+                                            fill=ThemeColors.fg(),
                                             components=[FpsCounter()],
                                             text="",
                                         ),
                                         Text(
-                                            fill=ThemeColors.foreground(),
+                                            fill=ThemeColors.fg(),
                                             components=[
                                                 AssetLoaderStats(),
                                             ],

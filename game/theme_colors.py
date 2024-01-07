@@ -3,19 +3,27 @@ from engine.models import Color
 
 class ThemeColors:
     @staticmethod
-    def foreground() -> Color:
+    def fg() -> Color:
         return Color.from_hex("#DFF8EB")
 
     @staticmethod
-    def foreground_inverse() -> Color:
+    def fg_inverse() -> Color:
         return Color.black()
 
     @staticmethod
-    def background() -> Color:
+    def fg_muted() -> Color:
+        return Color.from_hex("#5B4276")
+
+    @staticmethod
+    def muted() -> Color:
+        return Color.from_hex("#DFD8E9")
+
+    @staticmethod
+    def bg() -> Color:
         return Color.from_hex("#1A1423")
 
     @staticmethod
-    def background_secondary() -> Color:
+    def bg_secondary() -> Color:
         return Color.from_hex("#312541")
 
     @staticmethod

@@ -1,6 +1,6 @@
 import copy
 from tkinter import Canvas
-from typing import Callable
+from typing import Any, Callable
 from engine.entities.basic import Entity
 from engine.entities.components.base import Component
 from engine.models import Constraints, FrameContext, Position, Size
@@ -25,7 +25,7 @@ class EntitySwitch(Entity):
         position: Position = Position(x=0, y=0),
         components: list[Component] = [],
         current: str,
-        entities: dict[str, Callable[[], Entity]],
+        entities: dict[Any, Callable[[], Entity]],
     ):
         super().__init__(tag=tag, position=position, components=components)
         self.state = EntitySwitchState(current=current)

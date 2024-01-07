@@ -58,11 +58,15 @@ class MainMenu:
                                 Expanded(),
                                 *[
                                     Button.build(
-                                        title=entry.title, on_click=entry.on_click
+                                        title=entry.title,
+                                        size="lg",
+                                        on_click=entry.on_click,
                                     )
                                     for entry in menu_entries
                                 ],
-                                Button.build(title="Quit", on_click=lambda *_: exit()),
+                                Button.build(
+                                    title="Quit", size="lg", on_click=lambda *_: exit()
+                                ),
                                 Expanded(),
                             ],
                         ),

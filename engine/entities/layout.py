@@ -384,12 +384,14 @@ class Flex(Entity):
                 flex_total += child.state.flex  # type: ignore
                 continue
 
+            c = constraints.copy()
+
             if state.direction == FlexDirection.Row:
-                child._size = child.layout(ctx, constraints)
+                child._size = child.layout(ctx, c)
                 specific_children_size += child._size.width
                 max_cross = max(max_cross, child._size.height)
             else:
-                child._size = child.layout(ctx, constraints)
+                child._size = child.layout(ctx, c)
                 specific_children_size += child._size.height
                 max_cross = max(max_cross, child._size.width)
 
@@ -406,7 +408,7 @@ class Flex(Entity):
             if not self.is_flex_child(child):  # type: ignore
                 continue
 
-            c = copy.copy(constraints)
+            c = constraints.copy()
 
             if state.direction == FlexDirection.Row:
                 c.max_width = rest * child.state.flex / flex_total  # type: ignore
@@ -476,7 +478,7 @@ class Expanded(Entity):
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         if self.child is not None:
             self.child._size = self.child.layout(ctx, constraints)
-            return self.child._size
+            return constraints.fit_size(self.child._size)
 
         return constraints.to_min_size()
 
@@ -598,3 +600,70 @@ class SizeBox(Entity):
         h = state.height or child_size.height
 
         return constraints.fit_size(Size(width=w, height=h))
+
+
+class LockMinBoxState:
+    def __init__(self, *, width: bool = False, height: bool = False):
+        self.width = width
+        self.height = height
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+
+class LockMinBox(Entity):
+    state: LockMinBoxState
+
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        width: bool = False,
+        height: bool = False,
+        components: list[Component] = [],
+        child: Entity,
+    ):
+        super().__init__(tag=tag, position=position, components=components)
+        self.child = child
+        self.state = LockMinBoxState(width=width, height=height)
+        self._state = self.state.copy()
+
+    def create(self, canvas: Canvas):
+        self.canvas = canvas
+
+        for component in self.components:
+            component.create(self)
+
+        self.child.create(canvas)
+
+    def destroy(self):
+        for component in self.components:
+            component.destroy(self)
+        self.child.destroy()
+
+    def paint(self, ctx: FrameContext, position: Position):
+        pos = self.position.add(position)
+
+        for component in self.components:
+            component.before_paint(self, ctx, pos, self._size, self._state)
+
+        child_position = Position(x=pos.x, y=pos.y)
+        self.child.paint(ctx, child_position)
+
+    def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
+        state = self.state.copy()
+        for component in self.components:
+            component.before_layout(self, ctx, state)
+        self._state = state
+
+        c = constraints.copy()
+        if state.width:
+            c.max_width = c.min_width
+        if state.height:
+            c.max_height = c.min_height
+
+        child_size = self.child.layout(ctx, c)
+        self.child._size = child_size
+
+        return constraints.fit_size(child_size)

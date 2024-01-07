@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from tkinter import Canvas
 from tkinter.font import Font
 from typing import Any
+from timeit import default_timer as timer
 
 from engine.models import Color, FrameContext, Position, Size, Constraints
 from engine.entities.components.base import Component
@@ -291,7 +292,7 @@ class Sprite(Entity):
         super().__init__(tag=tag, position=position, components=components)
         self.state = SpriteState(asset_key=asset_key, size=size)
         self._state = self.state.copy()
-        self._size = Size(width=0, height=0)
+        self._size = Size(width=10, height=10)
 
     def create(self, canvas: Canvas):
         self.canvas = canvas
@@ -314,6 +315,96 @@ class Sprite(Entity):
         asset = ctx.asset_manager.get(
             self._state.asset_key, int(self._size.width), int(self._size.height)
         )
+        self.canvas.coords(self.id, pos.x, pos.y)
+        self.canvas.itemconfigure(self.id, image=asset)
+        self.canvas.tag_raise(self.id)
+
+    def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
+        state = self.state.copy()
+        for component in self.components:
+            component.before_layout(self, ctx, state)
+
+        self._state = state
+
+        return constraints.fit_size(state.size)
+
+
+class AnimatedSpriteState:
+    def __init__(self, *, asset_key: str, size: Size | None = None, speed: float = 1.0):
+        self.asset_key = asset_key
+        self.size = size
+        self.speed = speed
+        self.frame_idx = 0
+        self.frame_time = timer()
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+
+class AnimatedSprite(Entity):
+    state: AnimatedSpriteState
+
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        size: Size | None = None,
+        asset_key: str,
+        components: list[Component] = [],
+    ):
+        super().__init__(tag=tag, position=position, components=components)
+        self.state = AnimatedSpriteState(asset_key=asset_key, size=size)
+        self._state = self.state.copy()
+        self._size = Size(width=10, height=10)
+
+    def set_asset_key(self, asset_key: str):
+        if self.state.asset_key == asset_key:
+            return
+        self.state.asset_key = asset_key
+        self.state.frame_idx = 0
+        self.state.frame_time = timer()
+
+    def create(self, canvas: Canvas):
+        self.canvas = canvas
+        self.id = canvas.create_image(0, 0, image="", anchor="nw")
+
+        for component in self.components:
+            component.create(self)
+
+    def destroy(self):
+        for component in self.components:
+            component.destroy(self)
+        self.canvas.delete(self.id)
+
+    def paint(self, ctx: FrameContext, position: Position):
+        pos = self.position.add(position)
+
+        for effect in self.components:
+            effect.before_paint(self, ctx, pos, self._size, self._state)
+
+        asset_list = ctx.asset_manager.get_animated(
+            self._state.asset_key, int(self._size.width), int(self._size.height)
+        )
+        raw_asset = ctx.asset_manager.get_raw(self._state.asset_key)
+
+        asset = None
+        if (
+            asset_list is not None
+            and raw_asset is not None
+            and raw_asset.animation is not None
+        ):
+            now = timer()
+            if now - self._state.frame_time > self._state.speed * (
+                1 / raw_asset.animation.fps
+            ):
+                self.state.frame_idx = (
+                    self.state.frame_idx + 1
+                ) % raw_asset.animation.tile_count
+                self.state.frame_time = now
+
+            asset = asset_list[self.state.frame_idx]
+
         self.canvas.coords(self.id, pos.x, pos.y)
         self.canvas.itemconfigure(self.id, image=asset)
         self.canvas.tag_raise(self.id)

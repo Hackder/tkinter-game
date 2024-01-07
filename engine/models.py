@@ -3,7 +3,7 @@ import copy
 from dataclasses import dataclass
 import colorsys
 
-from engine.assets import AssetManader
+from engine.assets import AssetManager
 from engine.traits import Transitionable
 
 
@@ -14,7 +14,7 @@ class FrameContext:
         delta_time: float,
         width: float,
         height: float,
-        asset_manager: AssetManader,
+        asset_manager: AssetManager,
     ):
         self.delta_time = delta_time
         self.width = width
@@ -29,6 +29,10 @@ class FrameContext:
 
 
 class Size(Transitionable):
+    @staticmethod
+    def square(value: float) -> Size:
+        return Size(width=value, height=value)
+
     def __init__(self, *, width: float, height: float):
         self.width = width
         self.height = height

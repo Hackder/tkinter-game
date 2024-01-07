@@ -3,7 +3,7 @@ from tkinter import Tk, Canvas
 
 from engine.entities.basic import RootScene
 from engine.models import Color, FrameContext
-from engine.assets import AssetManader
+from engine.assets import AssetManager
 from game.theme_colors import ThemeColors
 
 
@@ -13,7 +13,7 @@ class Renderer:
         window_width: float,
         window_height: float,
         asset_folder: str,
-        bg: Color = ThemeColors.foreground(),
+        bg: Color = ThemeColors.fg(),
     ):
         self.scene: RootScene | None = None
         self.root = Tk()
@@ -21,7 +21,7 @@ class Renderer:
         self.canvas = Canvas(self.root, highlightthickness=0, background=bg.to_hex())
         self.canvas.pack(fill="both", expand=True)
         self.last_frame = timer()
-        self.asset_manager = AssetManader(asset_folder)
+        self.asset_manager = AssetManager(asset_folder)
 
     def assign_scene(self, scene: RootScene):
         if self.scene is not None:
