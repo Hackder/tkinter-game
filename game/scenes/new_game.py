@@ -1,8 +1,7 @@
 from tkinter.font import Font
-from typing import Any, Callable
+from typing import Callable
 from engine.entities.basic import AnimatedSprite, Entity, Rect, Text
 from engine.entities.components.base import Hook
-from engine.entities.components.debug import DebugBounds
 from engine.entities.components.effects import SetCursor
 from engine.entities.components.events import OnClick
 from engine.entities.conditional import EntitySwitch
@@ -16,7 +15,7 @@ from engine.entities.layout import (
     SizeBox,
 )
 from engine.models import EdgeInset, Size
-from game.state import State
+from game.state import PlayerState, State
 from game.theme_colors import ThemeColors
 from game.widgets.button import Button
 
@@ -28,6 +27,7 @@ class ChoosePlayerButton:
             child=Button.build(
                 title=f"{n} Players",
                 on_click=lambda *_: State.game.create_players(n),
+                size="lg",
             ),
         )
 
@@ -41,15 +41,15 @@ class ChoosePlayerGrid:
                 Flex(
                     direction=FlexDirection.Row,
                     children=[
-                        ChoosePlayerButton.build(1),
                         ChoosePlayerButton.build(2),
+                        ChoosePlayerButton.build(3),
                     ],
                 ),
                 Flex(
                     direction=FlexDirection.Row,
                     children=[
-                        ChoosePlayerButton.build(3),
                         ChoosePlayerButton.build(4),
+                        ChoosePlayerButton.build(5),
                     ],
                 ),
             ],
@@ -60,7 +60,7 @@ class ChooseNPlayers:
     @staticmethod
     def build():
         return SizeBox(
-            width=300,
+            width=400,
             child=Flex(
                 direction=FlexDirection.Column,
                 gap=16,
@@ -84,7 +84,7 @@ class ChooseNPlayers:
 
 class PlayerItem:
     @staticmethod
-    def build():
+    def build(player: PlayerState):
         return Rect(
             fill=ThemeColors.muted(),
             outline_width=0,
@@ -95,14 +95,30 @@ class PlayerItem:
                     align=Alignment.Center,
                     children=[
                         Text(
-                            text="Player 1",
+                            text=player.name,
                             fill=ThemeColors.fg_inverse(),
                             font=Font(size=14),
                         ),
                         Expanded(),
                         Text(
                             text="show",
-                            components=[SetCursor(cursor="hand1")],
+                            components=[
+                                SetCursor(cursor="hand1"),
+                                OnClick(
+                                    callback=lambda *_: State.toggle_shown_player(
+                                        player
+                                    )
+                                ),
+                                Hook(
+                                    before_layout=lambda entity, *_: setattr(
+                                        entity.state,
+                                        "text",
+                                        "hide"
+                                        if player == State.shown_player
+                                        else "show",
+                                    )
+                                ),
+                            ],
                             font=Font(weight="bold", size=14, underline=True),
                             fill=ThemeColors.fg_inverse(),
                         ),
@@ -117,7 +133,7 @@ class ViewPlayers:
     def build():
         global character
         return SizeBox(
-            width=500,
+            width=400,
             height=300,
             child=Flex(
                 direction=FlexDirection.Column,
@@ -135,23 +151,47 @@ class ViewPlayers:
                                     child=Flex(
                                         direction=FlexDirection.Column,
                                         gap=8,
-                                        children=[PlayerItem.build() for _ in range(5)],
+                                        children=[
+                                            PlayerItem.build(p)
+                                            for p in State.game.humans()
+                                        ],
                                     ),
                                 ),
                                 Expanded(
                                     child=Center(
-                                        # child=Text(
-                                        #     text="Avatar Preview",
-                                        #     font=Font(size=18, weight="bold"),
-                                        #     fill=ThemeColors.fg_muted(),
-                                        # ),
-                                        child=Rect(
-                                            outline_width=4,
-                                            fill=ThemeColors.bg_secondary(),
-                                            child=AnimatedSprite(
-                                                asset_key="character1-idle",
-                                                size=Size.square(200),
-                                            ),
+                                        child=EntitySwitch(
+                                            current=False,
+                                            components=[
+                                                Hook(
+                                                    before_layout=lambda entity, *_: setattr(
+                                                        entity.state,
+                                                        "current",
+                                                        State.shown_player is not None,
+                                                    )
+                                                )
+                                            ],
+                                            entities={
+                                                True: lambda: Rect(
+                                                    outline_width=4,
+                                                    fill=ThemeColors.bg_secondary(),
+                                                    child=AnimatedSprite(
+                                                        components=[
+                                                            Hook(
+                                                                before_layout=lambda entity, *_: entity.set_asset_key(
+                                                                    State.shown_player.character.idle_asset_key  # type: ignore
+                                                                )
+                                                            )
+                                                        ],
+                                                        asset_key=State.shown_player.character.idle_asset_key,  # type: ignore
+                                                        size=Size.square(200),
+                                                    ),
+                                                ),
+                                                False: lambda: Text(
+                                                    text="Avatar Preview",
+                                                    font=Font(size=18, weight="bold"),
+                                                    fill=ThemeColors.fg_muted(),
+                                                ),
+                                            },
                                         ),
                                     ),
                                 ),
@@ -170,7 +210,7 @@ class ViewPlayers:
                             ),
                             Button.build(
                                 title="Start",
-                                on_click=lambda *_: setattr(State, "scene", "game"),
+                                on_click=lambda *_: State.set_scene("game"),
                             ),
                         ],
                     ),
@@ -182,7 +222,7 @@ class ViewPlayers:
 class NewGame:
     section_titles: dict[State.NewGameSection, str] = {
         "choose_n_players": "Pick the number of players",
-        "view_characters": "View characters",
+        "view_characters": "Let every player privately view their character.\nMake sure that no other player can see.",
     }
 
     section_map: dict[State.NewGameSection, Callable[[], Entity]] = {
@@ -210,23 +250,26 @@ class NewGame:
                                         fill=ThemeColors.fg(),
                                         font=Font(size=18, weight="bold"),
                                     ),
-                                    Text(
-                                        components=[
-                                            Hook(
-                                                before_layout=lambda entity, *_: setattr(
-                                                    entity.state,
-                                                    "text",
-                                                    NewGame.section_titles[
-                                                        State.new_game_section
-                                                    ],
-                                                )
-                                            )
-                                        ],
-                                        text=NewGame.section_titles[
-                                            State.new_game_section
-                                        ],
-                                        fill=ThemeColors.fg(),
-                                        font=Font(size=14),
+                                    SizeBox(
+                                        width=400,
+                                        child=Text(
+                                            components=[
+                                                Hook(
+                                                    before_layout=lambda entity, *_: setattr(
+                                                        entity.state,
+                                                        "text",
+                                                        NewGame.section_titles[
+                                                            State.new_game_section
+                                                        ],
+                                                    )
+                                                ),
+                                            ],
+                                            text=NewGame.section_titles[
+                                                State.new_game_section
+                                            ],
+                                            fill=ThemeColors.fg(),
+                                            font=Font(size=14),
+                                        ),
                                     ),
                                 ],
                             ),

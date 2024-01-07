@@ -7,7 +7,7 @@ from engine.models import Constraints, FrameContext, Position, Size
 
 
 class EntitySwitchState:
-    def __init__(self, current: str):
+    def __init__(self, current: Any):
         self.current = current
         self._last = current
 
@@ -24,7 +24,7 @@ class EntitySwitch(Entity):
         tag: str | None = None,
         position: Position = Position(x=0, y=0),
         components: list[Component] = [],
-        current: str,
+        current: Any,
         entities: dict[Any, Callable[[], Entity]],
     ):
         super().__init__(tag=tag, position=position, components=components)

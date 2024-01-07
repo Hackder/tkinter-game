@@ -12,12 +12,12 @@ from engine.assets import Asset, AssetManager, AssetType, TiledAnimation
 from game.theme_colors import ThemeColors
 
 
-def register_character(mgr: AssetManager, i: int):
+def register_character(mgr: AssetManager, idx: int, i: int):
     mgr.register(
         f"character{i}-walk",
         Asset(
             AssetType.AnimatedTileset,
-            f"characters/{i}/Walk.png",
+            f"characters/{idx}/Walk.png",
             Resampling.NEAREST,
             TiledAnimation(48, 48, 5),
         ),
@@ -26,7 +26,7 @@ def register_character(mgr: AssetManager, i: int):
         f"character{i}-idle",
         Asset(
             AssetType.AnimatedTileset,
-            f"characters/{i}/Idle.png",
+            f"characters/{idx}/Idle.png",
             Resampling.NEAREST,
             TiledAnimation(48, 48, 5),
         ),
@@ -44,8 +44,8 @@ if __name__ == "__main__":
     renderer.asset_manager.register(
         "small", Asset(AssetType.Still, "small.png", Resampling.NEAREST)
     )
-    for i in [1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12]:
-        register_character(renderer.asset_manager, i)
+    for i, idx in enumerate([1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12]):
+        register_character(renderer.asset_manager, idx, i + 1)
     renderer.asset_manager.start()
 
     renderer.start()
