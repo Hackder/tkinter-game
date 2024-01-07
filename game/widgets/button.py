@@ -73,7 +73,7 @@ class Button:
                 child=Center(
                     child=Text(
                         tag=tag,
-                        text=title,
+                        text=lambda: title,
                         fill=ThemeColors.fg(),
                         font=font
                         or Font(

@@ -5,6 +5,8 @@ from tkinter import Canvas
 from tkinter.font import Font
 from typing import Any
 from timeit import default_timer as timer
+from engine.entities.state import EntityState
+from engine.entities.types import BoundValue
 
 from engine.models import Color, FrameContext, Position, Size, Constraints
 from engine.entities.components.base import Component
@@ -180,16 +182,22 @@ class Rect(Entity):
         return constraints.fit_size(state.size)
 
 
-class TextState:
-    def __init__(self, *, text: str, width: float | None, fill: Color, font: Font):
-        self.text = text
+class TextState(EntityState):
+    def __init__(
+        self, *, text: BoundValue[str], width: float | None, fill: Color, font: Font
+    ):
+        self._bound_text = text
+        self.text = text()
         self.width = width
         self.fill = fill
         self.font = font
 
     def copy(self):
         return TextState(
-            text=self.text, width=self.width, fill=self.fill, font=self.font.copy()
+            text=self._bound_text,
+            width=self.width,
+            fill=self.fill,
+            font=self.font.copy(),
         )
 
 
@@ -202,7 +210,7 @@ class Text(Entity):
         *,
         tag: str | None = None,
         position: Position = Position(x=0, y=0),
-        text: str,
+        text: BoundValue[str],
         width: float | None = None,
         fill: Color = Color.black(),
         font: Font | None = None,
@@ -244,6 +252,7 @@ class Text(Entity):
         self.canvas.tag_raise(self.id)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
+        self.state.update()
         state = self.state.copy()
         for component in self.components:
             component.before_layout(self, ctx, state)
@@ -329,9 +338,16 @@ class Sprite(Entity):
         return constraints.fit_size(state.size)
 
 
-class AnimatedSpriteState:
-    def __init__(self, *, asset_key: str, size: Size | None = None, speed: float = 1.0):
-        self.asset_key = asset_key
+class AnimatedSpriteState(EntityState):
+    def __init__(
+        self,
+        *,
+        asset_key: BoundValue[str],
+        size: Size | None = None,
+        speed: float = 1.0,
+    ):
+        self._bound_asset_key = asset_key
+        self.asset_key = asset_key()
         self.size = size
         self.speed = speed
         self.frame_idx = 0
@@ -350,7 +366,7 @@ class AnimatedSprite(Entity):
         tag: str | None = None,
         position: Position = Position(x=0, y=0),
         size: Size | None = None,
-        asset_key: str,
+        asset_key: BoundValue[str],
         components: list[Component] = [],
     ):
         super().__init__(tag=tag, position=position, components=components)
@@ -410,6 +426,7 @@ class AnimatedSprite(Entity):
         self.canvas.tag_raise(self.id)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
+        self.state.update()
         state = self.state.copy()
         for component in self.components:
             component.before_layout(self, ctx, state)

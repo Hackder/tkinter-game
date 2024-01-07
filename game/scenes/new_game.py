@@ -96,13 +96,15 @@ class PlayerItem:
                     gap=8,
                     children=[
                         Text(
-                            text=player.name,
+                            text=lambda: player.name,
                             fill=ThemeColors.fg_inverse(),
                             font=Font(size=14),
                         ),
                         Expanded(),
                         Text(
-                            text="show",
+                            text=lambda: "hide"
+                            if player == State.shown_player
+                            else "show",
                             components=[
                                 SetCursor(cursor="hand1"),
                                 OnClick(
@@ -110,31 +112,13 @@ class PlayerItem:
                                         player
                                     )
                                 ),
-                                Hook(
-                                    before_layout=lambda entity, *_: setattr(
-                                        entity.state,
-                                        "text",
-                                        "hide"
-                                        if player == State.shown_player
-                                        else "show",
-                                    )
-                                ),
                             ],
                             font=Font(weight="bold", size=14, underline=True),
                             fill=ThemeColors.fg_inverse(),
                         ),
                         Text(
-                            text="(0)",
+                            text=lambda: f"({player.revealed_times})",
                             fill=ThemeColors.fg_inverse(),
-                            components=[
-                                Hook(
-                                    before_layout=lambda entity, *_: setattr(
-                                        entity.state,
-                                        "text",
-                                        f"({player.revealed_times})",
-                                    )
-                                )
-                            ],
                         ),
                     ],
                 ),
@@ -174,34 +158,21 @@ class ViewPlayers:
                                 Expanded(
                                     child=Center(
                                         child=EntitySwitch(
-                                            current=False,
-                                            components=[
-                                                Hook(
-                                                    before_layout=lambda entity, *_: setattr(
-                                                        entity.state,
-                                                        "current",
-                                                        State.shown_player is not None,
-                                                    )
-                                                )
-                                            ],
+                                            current=lambda: State.shown_player
+                                            is not None,
                                             entities={
                                                 True: lambda: Rect(
                                                     outline_width=4,
                                                     fill=ThemeColors.bg_secondary(),
                                                     child=AnimatedSprite(
-                                                        components=[
-                                                            Hook(
-                                                                before_layout=lambda entity, *_: entity.set_asset_key(
-                                                                    State.shown_player.character.idle_asset_key  # type: ignore
-                                                                )
-                                                            )
-                                                        ],
-                                                        asset_key=State.shown_player.character.idle_asset_key,  # type: ignore
+                                                        asset_key=lambda: State.shown_player.character.idle_asset_key
+                                                        if State.shown_player
+                                                        else "",
                                                         size=Size.square(200),
                                                     ),
                                                 ),
                                                 False: lambda: Text(
-                                                    text="Avatar Preview",
+                                                    text=lambda: "Avatar Preview",
                                                     font=Font(size=18, weight="bold"),
                                                     fill=ThemeColors.fg_muted(),
                                                 ),
@@ -260,25 +231,14 @@ class NewGame:
                                 direction=FlexDirection.Column,
                                 children=[
                                     Text(
-                                        text="New Game",
+                                        text=lambda: "New Game",
                                         fill=ThemeColors.fg(),
                                         font=Font(size=18, weight="bold"),
                                     ),
                                     SizeBox(
                                         width=450,
                                         child=Text(
-                                            components=[
-                                                Hook(
-                                                    before_layout=lambda entity, *_: setattr(
-                                                        entity.state,
-                                                        "text",
-                                                        NewGame.section_titles[
-                                                            State.new_game_section
-                                                        ],
-                                                    )
-                                                ),
-                                            ],
-                                            text=NewGame.section_titles[
+                                            text=lambda: NewGame.section_titles[
                                                 State.new_game_section
                                             ],
                                             fill=ThemeColors.fg(),
@@ -288,16 +248,7 @@ class NewGame:
                                 ],
                             ),
                             EntitySwitch(
-                                components=[
-                                    Hook(
-                                        before_layout=lambda entity, *_: setattr(
-                                            entity.state,
-                                            "current",
-                                            State.new_game_section,
-                                        )
-                                    ),
-                                ],
-                                current="choose_n_players",
+                                current=lambda: State.new_game_section,
                                 entities=NewGame.section_map,
                             ),
                         ],

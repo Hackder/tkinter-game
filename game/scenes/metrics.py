@@ -32,14 +32,14 @@ class Metrics:
                                         Text(
                                             fill=ThemeColors.fg(),
                                             components=[FpsCounter()],
-                                            text="",
+                                            text=lambda: "",
                                         ),
                                         Text(
                                             fill=ThemeColors.fg(),
                                             components=[
                                                 AssetLoaderStats(),
                                             ],
-                                            text="",
+                                            text=lambda: "",
                                         ),
                                     ],
                                 ),

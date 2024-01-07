@@ -1,8 +1,8 @@
 import sys
 
 
-if sys.version_info < (3, 11):
-    print("Please use Python 3.11 or above")
+if sys.version_info < (3, 12):
+    print("Please use Python 3.12 or above")
     sys.exit(1)
 
 import os

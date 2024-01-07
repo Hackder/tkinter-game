@@ -3,13 +3,15 @@ from tkinter import Canvas
 from typing import Any, Callable
 from engine.entities.basic import Entity
 from engine.entities.components.base import Component
+from engine.entities.state import EntityState
+from engine.entities.types import BoundValue
 from engine.models import Constraints, FrameContext, Position, Size
 
 
-class EntitySwitchState:
-    def __init__(self, current: Any):
-        self.current = current
-        self._last = current
+class EntitySwitchState(EntityState):
+    def __init__(self, current: BoundValue[Any]):
+        self._bound_current = current
+        self.current = current()
 
     def copy(self):
         return copy.copy(self)
@@ -24,7 +26,7 @@ class EntitySwitch(Entity):
         tag: str | None = None,
         position: Position = Position(x=0, y=0),
         components: list[Component] = [],
-        current: Any,
+        current: BoundValue[Any],
         entities: dict[Any, Callable[[], Entity]],
     ):
         super().__init__(tag=tag, position=position, components=components)
@@ -55,18 +57,15 @@ class EntitySwitch(Entity):
         self.current.paint(ctx, position)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
+        changed = self.state.update()
         state = self.state.copy()
         for component in self.components:
             component.before_layout(self, ctx, state)
 
-        if self.state.current != self.state._last:
+        if "current" in changed:
             self.current.destroy()
             self.current = self.entities[self.state.current]()
             self.current.create(self.canvas)
-
-            self.state._last = self.state.current
-            state._last = self.state._last
-            state.current = self.state.current
 
         self._state = state
 
