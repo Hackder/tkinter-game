@@ -27,6 +27,7 @@ class PlayerState:
             self.name = f"Bot {i + 1}"
         self.character = character
         self.human = human
+        self.revealed_times = 0
 
 
 class GameState:
@@ -69,5 +70,6 @@ class State:
             return
 
         State.shown_player = p
+        p.revealed_times += 1
 
     game = GameState()

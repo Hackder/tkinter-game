@@ -60,7 +60,7 @@ class ChooseNPlayers:
     @staticmethod
     def build():
         return SizeBox(
-            width=400,
+            width=450,
             child=Flex(
                 direction=FlexDirection.Column,
                 gap=16,
@@ -93,6 +93,7 @@ class PlayerItem:
                 child=Flex(
                     direction=FlexDirection.Row,
                     align=Alignment.Center,
+                    gap=8,
                     children=[
                         Text(
                             text=player.name,
@@ -122,6 +123,19 @@ class PlayerItem:
                             font=Font(weight="bold", size=14, underline=True),
                             fill=ThemeColors.fg_inverse(),
                         ),
+                        Text(
+                            text="(0)",
+                            fill=ThemeColors.fg_inverse(),
+                            components=[
+                                Hook(
+                                    before_layout=lambda entity, *_: setattr(
+                                        entity.state,
+                                        "text",
+                                        f"({player.revealed_times})",
+                                    )
+                                )
+                            ],
+                        ),
                     ],
                 ),
             ),
@@ -133,7 +147,7 @@ class ViewPlayers:
     def build():
         global character
         return SizeBox(
-            width=400,
+            width=450,
             height=300,
             child=Flex(
                 direction=FlexDirection.Column,
@@ -222,7 +236,7 @@ class ViewPlayers:
 class NewGame:
     section_titles: dict[State.NewGameSection, str] = {
         "choose_n_players": "Pick the number of players",
-        "view_characters": "Let every player privately view their character.\nMake sure that no other player can see.",
+        "view_characters": "Let every player privately view their character.\nMake sure that no other player can see.\nYou can see the number of times a character has been revealed in parentheses.",
     }
 
     section_map: dict[State.NewGameSection, Callable[[], Entity]] = {
@@ -251,7 +265,7 @@ class NewGame:
                                         font=Font(size=18, weight="bold"),
                                     ),
                                     SizeBox(
-                                        width=400,
+                                        width=450,
                                         child=Text(
                                             components=[
                                                 Hook(
