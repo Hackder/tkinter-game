@@ -1,14 +1,10 @@
 from typing import Callable
-from engine.entities.basic import Entity, Rect, RootScene
-from engine.entities.components.debug import FpsFlicker
+from engine.entities.basic import Entity, RootScene
 from engine.entities.conditional import EntitySwitch
 from engine.entities.layout import (
-    Scene,
     ScreenSizeLayout,
     Stack,
 )
-from engine.models import Position, Size
-from engine.entities.components.layout import Translate
 from game.scenes.game import Game
 
 from game.scenes.main_menu import MainMenu
@@ -38,18 +34,5 @@ scene = RootScene(
             ),
         ),
         Metrics.build(),
-        ScreenSizeLayout(
-            child=Scene(
-                children=[
-                    Rect(
-                        size=Size.square(100),
-                        components=[
-                            Translate(position=Position(x=100, y=100)),
-                            FpsFlicker(),
-                        ],
-                    )
-                ],
-            )
-        ),
     ]
 )
