@@ -75,7 +75,11 @@ class AssetManager:
 
     def __load_still(self, key: str, asset: Asset, width: int, height: int):
         self.log.info(
-            f"Loading {key} at size ({width}, {height}) from {os.path.join(self.asset_folder, asset.path)}"
+            f"Loading %s at size (%d, %d) from %s",
+            key,
+            width,
+            height,
+            os.path.join(self.asset_folder, asset.path),
         )
         image = Image.open(os.path.join(self.asset_folder, asset.path))
         image = image.resize((width, height), resample=asset.resampling)
@@ -90,7 +94,12 @@ class AssetManager:
         tile_count = animation.tile_count
 
         self.log.info(
-            f"Loading {tile_count if tile_count > -1 else '?'} tiles for {key} at size ({width}, {height}) from {os.path.join(self.asset_folder, asset.path)}"
+            f"Loading %s tiles for %s at size (%d, %d) from %s",
+            str(tile_count) if tile_count > -1 else "?",
+            key,
+            width,
+            height,
+            os.path.join(self.asset_folder, asset.path),
         )
 
         image = Image.open(os.path.join(self.asset_folder, asset.path))
@@ -125,13 +134,13 @@ class AssetManager:
 
         asset = self.raw_assets.get(key, None)
         if asset is None:
-            self.log.warn(f"Asset {key} not found")
+            self.log.warn(f"Asset %s not found", key)
             return None
 
         if asset.type == AssetType.Still:
             return self.__load_still(key, asset, width, height)
 
-        self.log.warn(f"Asset {key} ({asset.type}) is not a still image")
+        self.log.warn(f"Asset %s (%s) is not a still image", key, asset.type)
         return None
 
     def get_animated(
@@ -143,11 +152,13 @@ class AssetManager:
 
         asset = self.raw_assets.get(key, None)
         if asset is None:
-            self.log.warn(f"Asset {key} not found")
+            self.log.warn(f"Asset %s not found", key)
             return None
 
         if asset.type == AssetType.AnimatedTileset:
             return self.__load_animated_tileset(key, asset, width, height)
 
-        self.log.warn(f"Asset {key} ({asset.type}) is not an animated tileset")
+        self.log.warn(
+            f"Asset key (asset.type) is not an animated tileset", key, asset.type
+        )
         return None

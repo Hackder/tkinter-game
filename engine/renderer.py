@@ -60,7 +60,10 @@ class Renderer:
 
         if new_now - self.last_metrics > 1:
             self.log.info(
-                f"Frames renderred: {self.frames}, Engine time: {self.engine_time * 1000}ms, Engine frame time: {self.engine_time * 1000 / self.frames}ms"
+                f"Frames renderred: %d, Engine time: %f ms, Engine frame time: %f ms",
+                self.frames,
+                self.engine_time * 1000,
+                self.engine_time * 1000 / self.frames,
             )
             self.frames = 0
             self.engine_time = 0
