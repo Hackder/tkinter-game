@@ -1,3 +1,4 @@
+import os
 from timeit import default_timer as timer
 from tkinter import Tk, Canvas
 
@@ -69,7 +70,11 @@ class Renderer:
             self.engine_time = 0
             self.last_metrics = new_now
 
-        self.root.after_idle(self.frame)
+        # after_idle is not supported on MacOS
+        if os.name == "nt":
+            self.root.after_idle(self.frame)
+        else:
+            self.root.after(8, self.frame)
 
     def start(self):
         self.last_frame = timer()
