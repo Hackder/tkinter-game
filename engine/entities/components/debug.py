@@ -1,3 +1,4 @@
+import logging
 from engine.entities.components.base import Component
 from engine.entities.basic import Entity
 from engine.models import FrameContext, Position, Size, Color
@@ -99,24 +100,25 @@ class PrintLifecycle(Component):
         self.log_destroy = destroy
         self.log_before_layout = before_layout
         self.log_before_paint = before_paint
+        self.log = logging.getLogger(f"PrintLifecycle({tag})")
 
     def create(self, entity: Entity):
         if not self.log_create:
             return
 
-        print(f"({self.tag}) Create:", entity)
+        self.log.debug(f"Create:", entity)
 
     def destroy(self, entity: Entity):
         if not self.log_destroy:
             return
 
-        print(f"({self.tag}) Destroy:", entity)
+        self.log.debug(f"Destroy:", entity)
 
     def before_layout(self, entity: Entity, ctx: FrameContext, state: Any | None):
         if not self.log_before_layout:
             return
 
-        print(f"({self.tag}) Before layout:", entity, ctx, state)
+        self.log.debug(f"Before layout:", entity, ctx, state)
 
     def before_paint(
         self,
@@ -129,4 +131,4 @@ class PrintLifecycle(Component):
         if not self.log_before_paint:
             return
 
-        print(f"({self.tag}) Before paint:", entity, ctx, position, size, state)
+        self.log.debug(f"Before paint:", entity, ctx, position, size, state)
