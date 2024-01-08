@@ -72,7 +72,9 @@ class AssetManager:
         return self.loaded() + len(self.queue)
 
     def __load_still(self, key: str, asset: Asset, width: int, height: int):
-        print(f"INFO: Loading {key} from {os.path.join(self.asset_folder, asset.path)}")
+        print(
+            f"INFO: Loading {key} at size ({width}, {height}) from {os.path.join(self.asset_folder, asset.path)}"
+        )
         image = Image.open(os.path.join(self.asset_folder, asset.path))
         image = image.resize((width, height), resample=asset.resampling)
         tk_image = ImageTk.PhotoImage(image, width=width, height=height)
@@ -86,7 +88,7 @@ class AssetManager:
         tile_count = animation.tile_count
 
         print(
-            f"INFO: Loading {tile_count if tile_count > -1 else '?'} tiles for {key} from {os.path.join(self.asset_folder, asset.path)}"
+            f"INFO: Loading {tile_count if tile_count > -1 else '?'} tiles for {key} at size ({width}, {height}) from {os.path.join(self.asset_folder, asset.path)}"
         )
         image = Image.open(os.path.join(self.asset_folder, asset.path))
 
