@@ -66,7 +66,7 @@ class AssetManager:
             self.queue.append((key, width, height))
 
     def loaded(self) -> int:
-        return len(self.assets)
+        return len(self.assets) + len(self.animated_assets)
 
     def total(self) -> int:
         return self.loaded() + len(self.queue)
