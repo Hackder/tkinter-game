@@ -31,6 +31,28 @@ class FpsCounter(Component):
         state.text = self.text
 
 
+class FpsFlicker(Component):
+    def __init__(self, a: Color = Color.white(), b: Color = Color.black()):
+        self.a = a
+        self.b = b
+        self.color = a
+
+    def before_paint(
+        self,
+        entity: Entity,
+        ctx: FrameContext,
+        position: Position,
+        size: Size,
+        state: Any | None,
+    ):
+        if not hasattr(state, "fill") or not state:
+            raise Exception(
+                "FpsFlicker component must be on an entity which supports fill"
+            )
+
+        state.fill = self.color
+
+
 class DebugBounds(Component):
     def __init__(self, *, color: Color = Color.red()):
         self.color = color
