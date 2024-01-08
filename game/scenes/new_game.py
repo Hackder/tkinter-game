@@ -2,9 +2,10 @@ from tkinter.font import Font
 from typing import Callable
 from engine.entities.basic import AnimatedSprite, Entity, Rect, Text
 from engine.entities.components.base import Hook
+from engine.entities.components.debug import DebugBounds
 from engine.entities.components.effects import SetCursor
 from engine.entities.components.events import OnClick
-from engine.entities.conditional import EntitySwitch
+from engine.entities.conditional import EntitySwitch, Reactive
 from engine.entities.layout import (
     Alignment,
     Center,
@@ -12,9 +13,11 @@ from engine.entities.layout import (
     Flex,
     FlexDirection,
     Padding,
+    Scene,
     SizeBox,
+    Stack,
 )
-from engine.models import EdgeInset, Size
+from engine.models import EdgeInset, Position, Size
 from game.state import PlayerState, State
 from game.theme_colors import ThemeColors
 from game.widgets.button import Button
@@ -194,7 +197,74 @@ class ViewPlayers:
                                 ),
                             ),
                             Button.build(
-                                title="Start",
+                                title="Next",
+                                on_click=lambda *_: State.set_new_game_section(
+                                    "view_board"
+                                ),
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        )
+
+
+class BoardPreview:
+    @staticmethod
+    def build():
+        return SizeBox(
+            width=200,
+            height=200,
+            child=Reactive(
+                dependency=lambda: State.game.board,
+                builder=lambda: Scene(
+                    children=[
+                        Rect(
+                            fill=ThemeColors.fg(),
+                            position=Position(x=room.x * 5, y=room.y * 5 + 100),
+                            size=Size(width=room.width * 5, height=room.height * 5),
+                        )
+                        for room in State.game.board
+                    ],
+                ),
+            ),
+        )
+
+
+class ViewBoard:
+    @staticmethod
+    def build():
+        State.game.generate_board()
+
+        return SizeBox(
+            width=450,
+            height=300,
+            child=Flex(
+                direction=FlexDirection.Column,
+                align=Alignment.Center,
+                gap=16,
+                children=[
+                    Expanded(
+                        child=Center(
+                            child=BoardPreview.build(),
+                        ),
+                    ),
+                    Flex(
+                        direction=FlexDirection.Row,
+                        children=[
+                            Button.build(
+                                title="Regenerate",
+                                on_click=lambda *_: State.game.generate_board(),
+                            ),
+                            Expanded(),
+                            Button.build(
+                                title="Back",
+                                on_click=lambda *_: State.set_new_game_section(
+                                    "view_characters"
+                                ),
+                            ),
+                            Button.build(
+                                title="Start game",
                                 on_click=lambda *_: State.set_scene("game"),
                             ),
                         ],
@@ -208,11 +278,13 @@ class NewGame:
     section_titles: dict[State.NewGameSection, str] = {
         "choose_n_players": "Pick the number of players",
         "view_characters": "Let every player privately view their character.\nMake sure that no other player can see.\nYou can see the number of times a character has been revealed in parentheses.",
+        "view_board": "View the generated game board.",
     }
 
     section_map: dict[State.NewGameSection, Callable[[], Entity]] = {
         "choose_n_players": ChooseNPlayers.build,
         "view_characters": ViewPlayers.build,
+        "view_board": ViewBoard.build,
     }
 
     @staticmethod

@@ -16,7 +16,7 @@ class ThemeColors:
 
     @staticmethod
     def muted() -> Color:
-        return Color.from_hex("#DFD8E9")
+        return Color.from_hex("#DED1EE")
 
     @staticmethod
     def bg() -> Color:

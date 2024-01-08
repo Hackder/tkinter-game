@@ -1,6 +1,9 @@
 from __future__ import annotations
+from dataclasses import dataclass
 import random
 from typing import Literal
+
+from game.board_generator import BoardGenerator
 
 
 class Character:
@@ -30,8 +33,17 @@ class PlayerState:
         self.revealed_times = 0
 
 
+@dataclass
+class RoomState:
+    x: int
+    y: int
+    width: int
+    height: int
+
+
 class GameState:
     players: list[PlayerState] = []
+    board: list[RoomState] = []
 
     def create_players(self, n: int):
         chars = random.sample(Character.all(), k=2 * n)
@@ -43,19 +55,25 @@ class GameState:
     def humans(self):
         return filter(lambda p: p.human, self.players)
 
+    def generate_board(self):
+        generator = BoardGenerator(5, range(-25, 20))
+        board = generator.generate_board(9)
+
+        self.board = []
+        for room in board:
+            self.board.append(RoomState(*room, 5, 5))
+
 
 class State:
-    Scene = Literal["menu", "new_game", "game"]
+    Scene = Literal["menu", "new_game", "game", "view_board"]
     scene: str = "menu"
 
     @staticmethod
     def set_scene(scene: State.Scene):
         State.scene = scene
 
-    NewGameSection = Literal["choose_n_players", "view_characters"]
-    new_game_section: Literal[
-        "choose_n_players", "view_characters"
-    ] = "choose_n_players"
+    NewGameSection = Literal["choose_n_players", "view_characters", "view_board"]
+    new_game_section: State.NewGameSection = "choose_n_players"
 
     @staticmethod
     def set_new_game_section(section: State.NewGameSection):

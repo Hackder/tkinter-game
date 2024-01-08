@@ -73,3 +73,68 @@ class EntitySwitch(Entity):
         self.current._size = child_size
 
         return child_size
+
+
+class ReactiveState(EntityState):
+    def __init__(self, dependency: BoundValue[Any]):
+        self._bound_dependency = dependency
+        self.dependency = dependency()
+
+    def copy(self):
+        return copy.copy(self)
+
+
+class Reactive(Entity):
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        position: Position = Position(x=0, y=0),
+        components: list[Component] = [],
+        dependency: BoundValue[Any],
+        builder: BoundValue[Entity],
+    ):
+        super().__init__(tag=tag, position=position, components=components)
+        self.state = ReactiveState(dependency=dependency)
+        self._state = self.state.copy()
+        self.child_builder = builder
+        self.child = builder()
+
+    def create(self, canvas: Canvas):
+        self.canvas = canvas
+
+        for component in self.components:
+            component.create(self)
+
+        self.child = self.child_builder()
+        self.child.create(canvas)
+
+    def destroy(self):
+        for component in self.components:
+            component.destroy(self)
+
+        self.child.destroy()
+
+    def paint(self, ctx: FrameContext, position: Position):
+        for component in self.components:
+            component.before_paint(self, ctx, position, self._size, self._state)
+
+        self.child.paint(ctx, position)
+
+    def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
+        changed = self.state.update()
+        state = self.state.copy()
+        for component in self.components:
+            component.before_layout(self, ctx, state)
+
+        if "dependency" in changed:
+            self.child.destroy()
+            self.child = self.child_builder()
+            self.child.create(self.canvas)
+
+        self._state = state
+
+        child_size = self.child.layout(ctx, constraints)
+        self.child._size = child_size
+
+        return child_size
