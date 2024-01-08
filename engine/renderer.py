@@ -69,7 +69,7 @@ class Renderer:
             self.engine_time = 0
             self.last_metrics = new_now
 
-        self.root.after(8, self.frame)
+        self.root.after("idle", self.frame)
 
     def start(self):
         self.last_frame = timer()

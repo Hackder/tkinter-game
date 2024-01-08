@@ -51,6 +51,7 @@ class FpsFlicker(Component):
             )
 
         state.fill = self.color
+        self.color = self.b if self.color == self.a else self.a
 
 
 class DebugBounds(Component):
