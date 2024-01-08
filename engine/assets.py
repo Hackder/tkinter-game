@@ -1,4 +1,5 @@
 import os
+import logging
 from dataclasses import dataclass
 from enum import StrEnum
 from threading import Thread
@@ -37,6 +38,7 @@ class AssetManager:
         self.queue = list()
         self.thread = Thread(target=self.__load_thread, daemon=True)
         self.loading = False
+        self.log = logging.getLogger("AssetManager")
 
     def __load_thread(self):
         self.loading = True
@@ -72,8 +74,8 @@ class AssetManager:
         return self.loaded() + len(self.queue)
 
     def __load_still(self, key: str, asset: Asset, width: int, height: int):
-        print(
-            f"INFO: Loading {key} at size ({width}, {height}) from {os.path.join(self.asset_folder, asset.path)}"
+        self.log.info(
+            f"Loading {key} at size ({width}, {height}) from {os.path.join(self.asset_folder, asset.path)}"
         )
         image = Image.open(os.path.join(self.asset_folder, asset.path))
         image = image.resize((width, height), resample=asset.resampling)
@@ -87,9 +89,10 @@ class AssetManager:
 
         tile_count = animation.tile_count
 
-        print(
-            f"INFO: Loading {tile_count if tile_count > -1 else '?'} tiles for {key} at size ({width}, {height}) from {os.path.join(self.asset_folder, asset.path)}"
+        self.log.info(
+            f"Loading {tile_count if tile_count > -1 else '?'} tiles for {key} at size ({width}, {height}) from {os.path.join(self.asset_folder, asset.path)}"
         )
+
         image = Image.open(os.path.join(self.asset_folder, asset.path))
 
         if tile_count == -1:
@@ -122,13 +125,13 @@ class AssetManager:
 
         asset = self.raw_assets.get(key, None)
         if asset is None:
-            print(f"WARN: Asset {key} not found")
+            self.log.warn(f"Asset {key} not found")
             return None
 
         if asset.type == AssetType.Still:
             return self.__load_still(key, asset, width, height)
 
-        print(f"WARN: Asset {key} ({asset.type}) is not a still image")
+        self.log.warn(f"Asset {key} ({asset.type}) is not a still image")
         return None
 
     def get_animated(
@@ -140,11 +143,11 @@ class AssetManager:
 
         asset = self.raw_assets.get(key, None)
         if asset is None:
-            print(f"WARN: Asset {key} not found")
+            self.log.warn(f"Asset {key} not found")
             return None
 
         if asset.type == AssetType.AnimatedTileset:
             return self.__load_animated_tileset(key, asset, width, height)
 
-        print(f"WARN: Asset {key} ({asset.type}) is not an animated tileset")
+        self.log.warn(f"Asset {key} ({asset.type}) is not an animated tileset")
         return None
