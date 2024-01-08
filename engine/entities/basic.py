@@ -17,12 +17,9 @@ class Entity(ABC):
     canvas: Canvas
 
     @abstractmethod
-    def __init__(
-        self, *, tag: str | None, position: Position, components: list[Component] = []
-    ):
+    def __init__(self, *, tag: str | None, components: list[Component] = []):
         self.id = 0
         self.tag = tag
-        self.position = position
         self.components = components
         self._size = Size(width=0, height=0)
 
@@ -50,10 +47,8 @@ class RootScene:
     def __init__(
         self,
         *,
-        position: Position = Position(x=0, y=0),
         children: list[Entity] = [],
     ):
-        self.position = position
         self.children = children
 
     def create(self, canvas: Canvas):
@@ -67,7 +62,7 @@ class RootScene:
 
     def paint(self, ctx: FrameContext):
         for child in self.children:
-            child.paint(ctx, self.position)
+            child.paint(ctx, Position.zero())
 
     def layout(self, ctx: FrameContext):
         constraints = Constraints(
@@ -101,7 +96,6 @@ class Rect(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         size: Size | None = None,
         fill: Color = Color.white(),
         outline: Color = Color.black(),
@@ -109,7 +103,7 @@ class Rect(Entity):
         components: list[Component] = [],
         child: Entity | None = None,
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.state = RectState(
             size=size, fill=fill, outline=outline, outline_width=outline_width
         )
@@ -135,7 +129,7 @@ class Rect(Entity):
             self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
-        pos = self.position.add(position)
+        pos = position.copy()
         size = self._size.copy()
 
         for effect in self.components:
@@ -209,14 +203,13 @@ class Text(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         text: BoundValue[str],
         width: float | None = None,
         fill: Color = Color.black(),
         font: Font | None = None,
         components: list[Component] = [],
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         f = font if font is not None else Font(family="Helvetica", size=12)
         self.state = TextState(text=text, width=width, fill=fill, font=f)
         self._state = self.state.copy()
@@ -236,7 +229,7 @@ class Text(Entity):
         self.canvas.delete(self.id)
 
     def paint(self, ctx: FrameContext, position: Position):
-        pos = self.position.add(position)
+        pos = position.copy()
 
         for effect in self.components:
             effect.before_paint(self, ctx, pos, self._size, self._state)
@@ -293,12 +286,11 @@ class Sprite(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         size: Size | None = None,
         asset_key: str,
         components: list[Component] = [],
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.state = SpriteState(asset_key=asset_key, size=size)
         self._state = self.state.copy()
         self._size = Size(width=10, height=10)
@@ -316,7 +308,7 @@ class Sprite(Entity):
         self.canvas.delete(self.id)
 
     def paint(self, ctx: FrameContext, position: Position):
-        pos = self.position.add(position)
+        pos = position.copy()
 
         for effect in self.components:
             effect.before_paint(self, ctx, pos, self._size, self._state)
@@ -364,12 +356,11 @@ class AnimatedSprite(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         size: Size | None = None,
         asset_key: BoundValue[str],
         components: list[Component] = [],
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.state = AnimatedSpriteState(asset_key=asset_key, size=size)
         self._state = self.state.copy()
         self._size = Size(width=10, height=10)
@@ -394,7 +385,7 @@ class AnimatedSprite(Entity):
         self.canvas.delete(self.id)
 
     def paint(self, ctx: FrameContext, position: Position):
-        pos = self.position.add(position)
+        pos = position.copy()
 
         for effect in self.components:
             effect.before_paint(self, ctx, pos, self._size, self._state)

@@ -56,7 +56,9 @@ class Size(Transitionable):
             height=self.height + (other.height - self.height) * progress,
         )
 
-    def __eq__(self, other: Size):
+    def __eq__(self, other: object):
+        if not isinstance(other, Size):
+            return False
         return self.width == other.width and self.height == other.height
 
     def __repr__(self):
@@ -64,6 +66,10 @@ class Size(Transitionable):
 
 
 class Position(Transitionable):
+    @staticmethod
+    def zero() -> Position:
+        return Position(x=0, y=0)
+
     def __init__(self, *, x: float, y: float):
         self.x = x
         self.y = y
@@ -73,6 +79,14 @@ class Position(Transitionable):
 
     def add(self, other: Position):
         return Position(x=self.x + other.x, y=self.y + other.y)
+
+    def mut_add(self, other: Position | tuple[float, float]):
+        if isinstance(other, Position):
+            self.x += other.x
+            self.y += other.y
+        else:
+            self.x += other[0]
+            self.y += other[1]
 
     def sub(self, other: Position):
         return Position(x=self.x - other.x, y=self.y - other.y)
@@ -86,7 +100,9 @@ class Position(Transitionable):
             y=self.y + (other.y - self.y) * progress,
         )
 
-    def __eq__(self, other: Position):
+    def __eq__(self, other: object):
+        if not isinstance(other, Position):
+            return False
         return self.x == other.x and self.y == other.y
 
     def __repr__(self):

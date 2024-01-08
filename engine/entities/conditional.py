@@ -24,12 +24,11 @@ class EntitySwitch(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         components: list[Component] = [],
         current: BoundValue[Any],
         entities: dict[Any, Callable[[], Entity]],
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.state = EntitySwitchState(current=current)
         self._state = self.state.copy()
         self.entities = entities
@@ -89,12 +88,11 @@ class Reactive(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         components: list[Component] = [],
         dependency: BoundValue[Any],
         builder: BoundValue[Entity],
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.state = ReactiveState(dependency=dependency)
         self._state = self.state.copy()
         self.child_builder = builder

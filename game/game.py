@@ -1,18 +1,17 @@
 from typing import Callable
-from engine.entities.basic import Entity, RootScene, Text
+from engine.entities.basic import Entity, RootScene
 from engine.entities.conditional import EntitySwitch
 from engine.entities.layout import (
-    Center,
     ScreenSizeLayout,
     Stack,
 )
+from game.scenes.game import Game
 
 from game.scenes.main_menu import MainMenu
 from game.scenes.free_cube import FreeCube
 from game.scenes.metrics import Metrics
 from game.scenes.new_game import NewGame
 from game.state import State
-from game.theme_colors import ThemeColors
 
 
 scenes: dict[State.Scene, Callable[[], Entity]] = {
@@ -23,7 +22,7 @@ scenes: dict[State.Scene, Callable[[], Entity]] = {
         ]
     ),
     "new_game": NewGame.build,
-    "game": lambda: Center(child=Text(text=lambda: "Game", fill=ThemeColors.fg())),
+    "game": Game.build,
 }
 
 scene = RootScene(

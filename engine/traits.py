@@ -2,15 +2,15 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 
-class Transitionable(ABC):
+class Transitionable[T](ABC):
     @abstractmethod
-    def distance(self, other: Transitionable) -> float:
+    def distance(self, other: T) -> float:
         pass
 
     @abstractmethod
-    def copy(self) -> Transitionable:
+    def copy(self) -> T:
         pass
 
     @abstractmethod
-    def interpolate(self, other: Transitionable, progress: float) -> Transitionable:
+    def interpolate(self, other: T, progress: float) -> T:
         pass

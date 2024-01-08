@@ -29,3 +29,7 @@ class ThemeColors:
     @staticmethod
     def primary() -> Color:
         return Color.from_hex("#45335A")
+
+    @staticmethod
+    def gold() -> Color:
+        return Color.from_hex("#F0C808")

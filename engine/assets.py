@@ -1,5 +1,5 @@
 import os
-import logging
+from engine.logger import logger
 from dataclasses import dataclass
 from enum import StrEnum
 from threading import Thread
@@ -38,7 +38,7 @@ class AssetManager:
         self.queue = list()
         self.thread = Thread(target=self.__load_thread, daemon=True)
         self.loading = False
-        self.log = logging.getLogger("AssetManager")
+        self.log = logger.getChild("AssetManager")
 
     def __load_thread(self):
         self.loading = True

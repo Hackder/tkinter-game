@@ -14,11 +14,10 @@ class ScreenSizeLayout(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         components: list[Component] = [],
         child: Entity,
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.child = child
 
     def create(self, canvas: Canvas):
@@ -63,12 +62,11 @@ class Padding(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         padding: EdgeInset,
         components: list[Component] = [],
         child: Entity,
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.child = child
         self.state = PaddingState(padding=padding)
         self._state = self.state.copy()
@@ -88,7 +86,7 @@ class Padding(Entity):
         self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
-        pos = position.add(self.position)
+        pos = position.copy()
 
         for component in self.components:
             component.before_paint(self, ctx, pos, self._size, self._state)
@@ -128,11 +126,10 @@ class Center(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         components: list[Component] = [],
         child: Entity,
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.child = child
 
     def create(self, canvas: Canvas):
@@ -149,7 +146,7 @@ class Center(Entity):
         self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
-        pos = self.position.add(position)
+        pos = position.copy()
 
         for component in self.components:
             component.before_paint(self, ctx, pos, self._size, None)
@@ -172,11 +169,10 @@ class Stack(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         components: list[Component] = [],
         children: list[Entity] = [],
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.children = children
 
     def create(self, canvas: Canvas):
@@ -195,7 +191,7 @@ class Stack(Entity):
             child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
-        pos = self.position.add(position)
+        pos = position.copy()
         size = self._size.copy()
 
         for component in self.components:
@@ -205,15 +201,17 @@ class Stack(Entity):
             child.paint(ctx, pos)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
-        constraints = constraints.force_max()
-
         for component in self.components:
             component.before_layout(self, ctx, None)
 
+        max_w = 0
+        max_h = 0
         for child in self.children:
             child._size = child.layout(ctx, constraints)
+            max_w = max(max_w, child._size.width)
+            max_h = max(max_h, child._size.height)
 
-        return constraints.to_max_size()
+        return constraints.fit_size(Size(width=max_w, height=max_h))
 
 
 class Scene(Entity):
@@ -221,11 +219,10 @@ class Scene(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         components: list[Component] = [],
         children: list[Entity] = [],
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.children = children
 
     def create(self, canvas: Canvas):
@@ -244,7 +241,7 @@ class Scene(Entity):
             child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
-        pos = self.position.add(position)
+        pos = position.copy()
         size = self._size.copy()
 
         for component in self.components:
@@ -254,16 +251,16 @@ class Scene(Entity):
             child.paint(ctx, pos)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
-        constraints = constraints.with_min(0, 0)
+        c = constraints.with_min(0, 0)
         max_w = 0
         max_h = 0
         for child in self.children:
-            child_size = child.layout(ctx, constraints)
+            child_size = child.layout(ctx, c)
             child._size = child_size
-            max_w = max(max_w, child_size.width + child.position.x)
-            max_h = max(max_h, child_size.height + child.position.y)
+            max_w = max(max_w, child_size.width)
+            max_h = max(max_h, child_size.height)
 
-        return Size(width=max_w, height=max_h)
+        return constraints.fit_size(Size(width=max_w, height=max_h))
 
 
 class FlexDirection(StrEnum):
@@ -275,6 +272,8 @@ class FlexDirection(StrEnum):
             return "Row"
         elif self == FlexDirection.Column:
             return "Column"
+
+        return "Unknown"
 
 
 class Alignment(StrEnum):
@@ -301,14 +300,13 @@ class Flex(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         direction: FlexDirection,
         align: Alignment = Alignment.Start,
         gap: float = 0,
         components: list[Component] = [],
         children: list[Entity] = [],
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.children = children
         self.state = FlexState(direction=direction, align=align, gap=gap)
         self._state = self.state.copy()
@@ -329,7 +327,7 @@ class Flex(Entity):
             child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
-        pos = self.position.add(position)
+        pos = position.copy()
 
         for component in self.components:
             component.before_paint(self, ctx, pos, self._size, self._state)
@@ -442,12 +440,11 @@ class Expanded(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         flex: int = 1,
         components: list[Component] = [],
         child: Entity | None = None,
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.child = child
         self.state = ExpandState(flex=flex)
 
@@ -467,7 +464,7 @@ class Expanded(Entity):
             self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
-        pos = self.position.add(position)
+        pos = position.copy()
 
         for component in self.components:
             component.before_paint(self, ctx, pos, self._size, None)
@@ -488,12 +485,11 @@ class Viewport3d(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         camera: Camera,
         components: list[Component] = [],
         children: list[Entity3d] = [],
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.camera = camera
         self.children = children
         self._size = Size(width=0, height=0)
@@ -515,7 +511,7 @@ class Viewport3d(Entity):
             child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
-        pos = self.position.add(position)
+        pos = position.copy()
 
         for component in self.components:
             component.before_paint(self, ctx, pos, self._size, None)
@@ -546,13 +542,12 @@ class SizeBox(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         width: float | None = None,
         height: float | None = None,
         components: list[Component] = [],
         child: Entity,
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.child = child
         self.state = SizeBoxState(width=width, height=height)
         self._state = self.state.copy()
@@ -571,7 +566,7 @@ class SizeBox(Entity):
         self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
-        pos = self.position.add(position)
+        pos = position.copy()
 
         for component in self.components:
             component.before_paint(self, ctx, pos, self._size, self._state)
@@ -618,13 +613,12 @@ class LockMinBox(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         width: bool = False,
         height: bool = False,
         components: list[Component] = [],
         child: Entity,
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.child = child
         self.state = LockMinBoxState(width=width, height=height)
         self._state = self.state.copy()
@@ -643,7 +637,7 @@ class LockMinBox(Entity):
         self.child.destroy()
 
     def paint(self, ctx: FrameContext, position: Position):
-        pos = self.position.add(position)
+        pos = position.copy()
 
         for component in self.components:
             component.before_paint(self, ctx, pos, self._size, self._state)

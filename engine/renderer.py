@@ -5,6 +5,7 @@ from engine.entities.basic import RootScene
 from engine.models import Color, FrameContext
 from engine.assets import AssetManager
 from game.theme_colors import ThemeColors
+from engine.logger import logger
 
 
 class Renderer:
@@ -15,6 +16,7 @@ class Renderer:
         asset_folder: str,
         bg: Color = ThemeColors.fg(),
     ):
+        self.log = logger.getChild("Renderer")
         self.scene: RootScene | None = None
         self.root = Tk()
         self.root.geometry(f"{window_width}x{window_height}")
@@ -22,6 +24,10 @@ class Renderer:
         self.canvas.pack(fill="both", expand=True)
         self.last_frame = timer()
         self.asset_manager = AssetManager(asset_folder)
+
+        self.engine_time = 0
+        self.frames = 0
+        self.last_metrics = timer()
 
     def assign_scene(self, scene: RootScene):
         if self.scene is not None:
@@ -47,6 +53,19 @@ class Renderer:
         )
         self.scene.layout(ctx)
         self.scene.paint(ctx)
+
+        new_now = timer()
+        self.engine_time += new_now - now
+        self.frames += 1
+
+        if new_now - self.last_metrics > 1:
+            self.log.info(
+                f"Frames renderred: {self.frames}, Engine time: {self.engine_time * 1000}ms, Engine frame time: {self.engine_time * 1000 / self.frames}ms"
+            )
+            self.frames = 0
+            self.engine_time = 0
+            self.last_metrics = new_now
+
         self.root.after(8, self.frame)
 
     def start(self):

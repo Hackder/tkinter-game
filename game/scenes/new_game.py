@@ -1,10 +1,12 @@
+import copy
 from tkinter.font import Font
 from typing import Callable
 from engine.entities.basic import AnimatedSprite, Entity, Rect, Text
 from engine.entities.components.base import Hook
-from engine.entities.components.debug import DebugBounds
+from engine.entities.components.debug import DebugBounds, PrintLifecycle
 from engine.entities.components.effects import SetCursor
 from engine.entities.components.events import OnClick
+from engine.entities.components.layout import Translate
 from engine.entities.conditional import EntitySwitch, Reactive
 from engine.entities.layout import (
     Alignment,
@@ -175,7 +177,7 @@ class ViewPlayers:
                                                     ),
                                                 ),
                                                 False: lambda: Text(
-                                                    text=lambda: "Avatar Preview",
+                                                    text=lambda: "Character Preview",
                                                     font=Font(size=18, weight="bold"),
                                                     fill=ThemeColors.fg_muted(),
                                                 ),
@@ -216,13 +218,25 @@ class BoardPreview:
             width=200,
             height=200,
             child=Reactive(
-                dependency=lambda: State.game.board,
+                dependency=lambda: (
+                    State.game.board,
+                    State.game.start_room,
+                    State.game.end_room,
+                ),
                 builder=lambda: Scene(
                     children=[
                         Rect(
-                            fill=ThemeColors.fg(),
-                            position=Position(x=room.x * 5, y=room.y * 5 + 100),
+                            fill=ThemeColors.muted()
+                            if room == State.game.start_room
+                            else ThemeColors.gold()
+                            if room == State.game.end_room
+                            else ThemeColors.fg(),
                             size=Size(width=room.width * 5, height=room.height * 5),
+                            components=[
+                                Translate(
+                                    position=Position(x=room.x * 5, y=room.y * 5 + 100)
+                                ),
+                            ],
                         )
                         for room in State.game.board
                     ],

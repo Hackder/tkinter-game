@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import random
 from typing import Literal
+from engine.models import Position
 
 from game.board_generator import BoardGenerator
 
@@ -44,6 +45,8 @@ class RoomState:
 class GameState:
     players: list[PlayerState] = []
     board: list[RoomState] = []
+    start_room: RoomState | None = None
+    end_room: RoomState | None = None
 
     def create_players(self, n: int):
         chars = random.sample(Character.all(), k=2 * n)
@@ -62,6 +65,9 @@ class GameState:
         self.board = []
         for room in board:
             self.board.append(RoomState(*room, 5, 5))
+
+        self.start_room = self.board[0]
+        self.end_room = self.board[-1]
 
 
 class State:
@@ -91,3 +97,8 @@ class State:
         p.revealed_times += 1
 
     game = GameState()
+    game_view_offset = Position.zero()
+
+    @staticmethod
+    def move_game_view(dx: int, dy: int):
+        State.game_view_offset.mut_add((dx, dy))
