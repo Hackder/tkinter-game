@@ -70,7 +70,8 @@ class Renderer:
             self.engine_time = 0
             self.last_metrics = new_now
 
-        # after_idle is not supported on MacOS
+        # after_idle does not work on macos
+        # https://github.com/python/cpython/issues/100617
         if os.name == "nt":
             self.root.after_idle(self.frame)
         else:
