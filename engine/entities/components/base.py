@@ -64,3 +64,34 @@ class Bind(Component):
 
     def before_layout(self, entity: Entity, ctx: FrameContext, state: Any | None):
         setattr(state, self.property, self.getter())
+
+
+class PositionGroup(Component):
+    def __init__(self, components: list[Component]):
+        self.components = components
+
+    def create(self, entity: Entity):
+        for component in self.components:
+            component.create(entity)
+
+    def destroy(self, entity: Entity):
+        for component in self.components:
+            component.destroy(entity)
+
+    def before_paint(
+        self,
+        entity: Entity,
+        ctx: FrameContext,
+        position: Position,
+        size: Size,
+        state: Any | None,
+    ):
+        pos = Position.zero()
+        for component in self.components:
+            component.before_paint(entity, ctx, pos, size, state)
+
+        position.mut_add(pos)
+
+    def before_layout(self, entity: Entity, ctx: FrameContext, state: Any | None):
+        for component in self.components:
+            component.before_layout(entity, ctx, state)

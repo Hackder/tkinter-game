@@ -132,6 +132,7 @@ class Rect(Entity):
         pos = position.copy()
         size = self._size.copy()
 
+        self.canvas.tag_raise(self.id)
         for effect in self.components:
             effect.before_paint(self, ctx, pos, size, self._state)
 
@@ -144,8 +145,6 @@ class Rect(Entity):
             outline=self._state.outline.to_hex(),
             width=self._state.outline_width,
         )
-
-        self.canvas.tag_raise(self.id)
 
         if self.child is not None:
             self.child.paint(ctx, pos)
@@ -244,6 +243,7 @@ class Text(Entity):
     def paint(self, ctx: FrameContext, position: Position):
         pos = position.copy()
 
+        self.canvas.tag_raise(self.id)
         for effect in self.components:
             effect.before_paint(self, ctx, pos, self._size, self._state)
 
@@ -256,7 +256,6 @@ class Text(Entity):
             font=self._state.font,
             justify=self._state.justify,
         )
-        self.canvas.tag_raise(self.id)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         self.state.update()
@@ -324,6 +323,7 @@ class Sprite(Entity):
     def paint(self, ctx: FrameContext, position: Position):
         pos = position.copy()
 
+        self.canvas.tag_raise(self.id)
         for effect in self.components:
             effect.before_paint(self, ctx, pos, self._size, self._state)
 
@@ -332,7 +332,6 @@ class Sprite(Entity):
         )
         self.canvas.coords(self.id, pos.x, pos.y)
         self.canvas.itemconfigure(self.id, image=asset)
-        self.canvas.tag_raise(self.id)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         state = self.state.copy()
@@ -405,6 +404,7 @@ class AnimatedSprite(Entity):
     def paint(self, ctx: FrameContext, position: Position):
         pos = position.copy()
 
+        self.canvas.tag_raise(self.id)
         for effect in self.components:
             effect.before_paint(self, ctx, pos, self._size, self._state)
 
@@ -433,7 +433,6 @@ class AnimatedSprite(Entity):
 
         self.canvas.coords(self.id, pos.x, pos.y)
         self.canvas.itemconfigure(self.id, image=asset)
-        self.canvas.tag_raise(self.id)
 
     def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
         self.state.update()

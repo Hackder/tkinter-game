@@ -3,7 +3,7 @@ from tkinter.font import Font
 from typing import Any
 from engine.animation.utils import Easing
 from engine.entities.basic import AnimatedSprite, Entity, Rect, Text
-from engine.entities.components.base import Bind, Component
+from engine.entities.components.base import Bind, Component, Hook, PositionGroup
 from engine.entities.components.debug import DebugBounds
 from engine.entities.components.events import (
     OnClick,
@@ -293,8 +293,14 @@ class CharacterBarIcon:
                                 None if selected() else p
                             ),
                         ),
-                        Translate(get_position=lambda: get_offset()),
-                        PositionTransition(easing=Easing.ease_out, duration=0.2),
+                        PositionGroup(
+                            components=[
+                                Translate(get_position=lambda: get_offset()),
+                                PositionTransition(
+                                    easing=Easing.ease_out, duration=0.2
+                                ),
+                            ]
+                        ),
                     ],
                 ),
             ],
@@ -346,9 +352,38 @@ class WalkOnPosChange(Component):
             self.last_pos = position.copy()
 
 
+class YDepthSort(Component):
+    def __init__(self, store: list[tuple[Entity, float]]):
+        self.store = store
+
+    def before_paint(
+        self,
+        entity: Entity,
+        ctx: FrameContext,
+        position: Position,
+        size: Size,
+        state: Any | None,
+    ):
+        inserted_at = 0
+        for i, (e, y) in enumerate(self.store):
+            if y > position.y:
+                self.store.insert(i, (entity, position.y))
+                inserted_at = i
+                break
+        else:
+            self.store.append((entity, position.y))
+            inserted_at = len(self.store) - 1
+
+        for i in range(inserted_at + 1, len(self.store)):
+            e, y = self.store[i]
+            e.canvas.tag_raise(e.id)
+
+
 class GamePlayer:
     @staticmethod
-    def build(p: PlayerState, scale: float = 32) -> Entity:
+    def build(
+        p: PlayerState, y_sort_store: list[tuple[Entity, float]], scale: float = 32
+    ) -> Entity:
         player_scale = 1.2
 
         return Stack(
@@ -359,15 +394,28 @@ class GamePlayer:
                         y=p.y * scale - scale * (player_scale - 0.5),
                     )
                 ),
-                RandomWander(scale=scale),
-                PositionTransition(speed=20),
             ],
             children=[
                 AnimatedSprite(
                     asset_key=lambda: p.character.idle_asset_key,
                     size=Size(width=scale * player_scale, height=scale * player_scale),
                     components=[
-                        WalkOnPosChange(walk_asset_key=p.character.walk_asset_key),
+                        PositionGroup(
+                            components=[
+                                RandomWander(scale=scale),
+                                PositionTransition(speed=20),
+                                WalkOnPosChange(
+                                    walk_asset_key=p.character.walk_asset_key
+                                ),
+                            ]
+                        ),
+                        YDepthSort(y_sort_store),
+                        OnMouseEnter(callback=lambda *_: State.set_hovered_player(p)),
+                        OnMouseLeave(
+                            callback=lambda *_: State.set_hovered_player(None)
+                        ),
+                        OnClick(callback=lambda *_: State.set_selected_player(p)),
+                        SetCursor(cursor="hand1"),
                     ],
                 )
             ],
@@ -377,6 +425,8 @@ class GamePlayer:
 class Game:
     @staticmethod
     def build() -> Entity:
+        y_sort_store = []
+
         return Stack(
             children=[
                 Rect(
@@ -401,7 +451,15 @@ class Game:
                                 for room in State.game.board
                             ],
                             *[GameRoom.build(room, 50) for room in State.game.board],
-                            *[GamePlayer.build(p, 50) for p in State.game.players],
+                            *[
+                                GamePlayer.build(p, y_sort_store, 50)
+                                for p in State.game.players
+                            ],
+                            Scene(
+                                components=[
+                                    Hook(before_paint=lambda *_: y_sort_store.clear())
+                                ]
+                            ),
                         ],
                     ),
                 ),

@@ -80,6 +80,8 @@ class State:
     def set_scene(scene: State.Scene):
         if scene == "new_game":
             State.game = GameState()
+            State.new_game_section = "choose_n_players"
+            State.game_paused = False
         State.scene = scene
 
     NewGameSection = Literal["choose_n_players", "view_characters", "view_board"]

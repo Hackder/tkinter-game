@@ -37,7 +37,7 @@ class MainMenu:
         menu_entries = [
             MenuEntry(
                 "New Game",
-                lambda *_: setattr(State, "scene", "new_game"),
+                lambda *_: State.set_scene("new_game"),
             ),
             MenuEntry("Load Game", MainMenu.load_game),
         ]
