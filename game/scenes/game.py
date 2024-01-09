@@ -500,6 +500,9 @@ class AvailableTiles:
             tiles.append(AvailableTiles.create_tile(x, y, dst))
             visited.add((x, y))
 
+            if dst == State.game.available_stemps:
+                continue
+
             for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
                 nx = x + dx
                 ny = y + dy
@@ -510,12 +513,11 @@ class AvailableTiles:
                 if (nx, ny) in visited:
                     continue
 
-                if dst + 1 > State.game.available_stemps:
-                    continue
-
                 distances[(nx, ny)] = dst + 1
-
                 queue.append((nx, ny))
+                visited.add((nx, ny))
+
+        print(len(tiles))
 
         return tiles
 
