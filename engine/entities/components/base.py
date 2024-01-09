@@ -57,13 +57,41 @@ class Hook(Component):
             self._before_layout(entity, ctx, state)
 
 
+class LeaveOriginal:
+    pass
+
+
 class Bind(Component):
     def __init__(self, property: str, getter: Callable):
         self.property = property
         self.getter = getter
 
     def before_layout(self, entity: Entity, ctx: FrameContext, state: Any | None):
-        setattr(state, self.property, self.getter())
+        val = self.getter()
+        if isinstance(val, LeaveOriginal):
+            return
+
+        setattr(state, self.property, val)
+
+
+class PaintBind(Component):
+    def __init__(self, property: str, getter: Callable):
+        self.property = property
+        self.getter = getter
+
+    def before_paint(
+        self,
+        entity: Entity,
+        ctx: FrameContext,
+        position: Position,
+        size: Size,
+        state: Any | None,
+    ):
+        val = self.getter()
+        if isinstance(val, LeaveOriginal):
+            return
+
+        setattr(state, self.property, val)
 
 
 class PositionGroup(Component):

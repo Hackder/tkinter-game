@@ -50,6 +50,7 @@ class GameState:
     start_room: RoomState | None = None
     end_room: RoomState | None = None
     scale: float = 50
+    available_stemps: int = 6
 
     def create_players(self, n: int):
         chars = random.sample(Character.all(), k=2 * n)
@@ -132,3 +133,12 @@ class State:
     @staticmethod
     def set_selected_player(p: PlayerState | None):
         State.selected_player = p
+
+    @staticmethod
+    def move_selected_player_to(x: int, y: int):
+        if State.selected_player is None:
+            return
+
+        State.selected_player.x = x
+        State.selected_player.y = y
+        State.selected_player = None

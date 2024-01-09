@@ -2,8 +2,9 @@ from __future__ import annotations
 from random import random
 from abc import ABC, abstractmethod
 from typing import Any
+from timeit import default_timer as timer
 
-from engine.models import Position, Size, FrameContext
+from engine.models import Color, Position, Size, FrameContext
 from engine.traits import Transitionable
 from engine.animation.utils import Easing
 from engine.entities.basic import Entity
@@ -364,7 +365,6 @@ class SetCursor(Component):
 class StartOnTop(Component):
     def __init__(self, *, offset: float = 0):
         self.offset = offset
-        self.first = True
 
     def before_paint(
         self,
@@ -376,3 +376,31 @@ class StartOnTop(Component):
     ):
         position.y -= position.y + size.height - self.offset
         entity.canvas.after_idle(lambda: entity.components.remove(self))
+
+
+class StartOnFill(Component):
+    def __init__(self, *, fill: Color, delay: float = 0):
+        self.fill = fill
+        self.delay = delay
+        self.start = 0
+
+    def create(self, entity: Entity):
+        self.start = timer()
+
+    def before_paint(
+        self,
+        entity: Entity,
+        ctx: FrameContext,
+        position: Position,
+        size: Size,
+        state: Any | None,
+    ):
+        if state is None or not hasattr(state, "fill"):
+            raise Exception(
+                "StartOnFill component must be on an entity which supports fill"
+            )
+
+        state.fill = self.fill
+
+        if timer() - self.start > self.delay:
+            entity.canvas.after_idle(lambda: entity.components.remove(self))

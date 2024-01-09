@@ -3,7 +3,14 @@ from tkinter.font import Font
 from typing import Any
 from engine.animation.utils import Easing
 from engine.entities.basic import AnimatedSprite, Entity, Rect, Text
-from engine.entities.components.base import Bind, Component, Hook, PositionGroup
+from engine.entities.components.base import (
+    Bind,
+    Component,
+    Hook,
+    LeaveOriginal,
+    PaintBind,
+    PositionGroup,
+)
 from engine.entities.components.debug import DebugBounds
 from engine.entities.components.events import (
     OnClick,
@@ -15,10 +22,11 @@ from engine.entities.components.effects import (
     FillTransition,
     PositionTransition,
     SetCursor,
+    StartOnFill,
     StartOnTop,
 )
 from engine.entities.components.layout import Translate
-from engine.entities.conditional import EntitySwitch
+from engine.entities.conditional import EntitySwitch, Reactive
 from engine.entities.layout import (
     Alignment,
     Center,
@@ -30,7 +38,9 @@ from engine.entities.layout import (
     SizeBox,
     Stack,
 )
-from engine.models import EdgeInset, FrameContext, Position, Size
+from engine.entities.state import EntityState
+from engine.models import Color, EdgeInset, FrameContext, Position, Size
+from engine.state import SimpleState
 from game.state import PlayerState, RoomState, State
 from game.theme_colors import ThemeColors
 from game.widgets.button import Button
@@ -446,6 +456,82 @@ class GamePlayer:
         )
 
 
+class AvailableTiles:
+    @staticmethod
+    def create_tile(x: int, y: int, distance) -> Entity:
+        hoverred = SimpleState(False)
+        return Rect(
+            fill=Color.from_hex("#565264"),
+            size=Size.square(State.game.scale),
+            components=[
+                Translate(
+                    position=Position(
+                        x=x * State.game.scale,
+                        y=y * State.game.scale,
+                    )
+                ),
+                StartOnFill(
+                    fill=ThemeColors.bg_secondary(),
+                    delay=distance * 0.07,
+                ),
+                FillTransition(
+                    duration=0.3,
+                    easing=Easing.ease_in_out,
+                ),
+                OnMouseEnter(callback=lambda *_: hoverred.set(True)),
+                OnMouseLeave(callback=lambda *_: hoverred.set(False)),
+                PaintBind(
+                    "fill",
+                    lambda: ThemeColors.gold() if hoverred.get() else LeaveOriginal(),
+                ),
+                SetCursor(cursor="hand2"),
+                OnClick(callback=lambda *_: State.move_selected_player_to(x, y)),
+            ],
+        )
+
+    @staticmethod
+    def create_tiles() -> list[Entity]:
+        p = State.selected_player
+        if p is None:
+            return []
+
+        tiles: list[Entity] = []
+
+        for distance in range(State.game.available_stemps + 1):
+            for x in range(-distance, distance + 1):
+                for y in range(-distance, distance + 1):
+                    if abs(x) + abs(y) != distance:
+                        continue
+
+                    for room in State.game.board:
+                        if (
+                            room.x <= p.x + x < room.x + room.width
+                            and room.y <= p.y + y < room.y + room.height
+                        ):
+                            break
+                    else:
+                        continue
+
+                    tiles.append(AvailableTiles.create_tile(p.x + x, p.y + y, distance))
+
+        return tiles
+
+    @staticmethod
+    def build() -> Entity:
+        return Reactive(
+            dependency=lambda: State.selected_player,
+            builder=lambda: EntitySwitch(
+                current=lambda: State.selected_player is not None,
+                entities={
+                    True: lambda: Scene(
+                        children=AvailableTiles.create_tiles(),
+                    ),
+                    False: lambda: Scene(),
+                },
+            ),
+        )
+
+
 class Game:
     @staticmethod
     def build() -> Entity:
@@ -475,6 +561,7 @@ class Game:
                                 for room in State.game.board
                             ],
                             *[GameRoom.build(room) for room in State.game.board],
+                            AvailableTiles.build(),
                             *[
                                 GamePlayer.build(p, y_sort_store)
                                 for p in State.game.players
