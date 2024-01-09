@@ -11,7 +11,6 @@ from engine.entities.components.base import (
     PaintBind,
     PositionGroup,
 )
-from engine.entities.components.debug import DebugBounds
 from engine.entities.components.events import (
     OnClick,
     OnDrag,
@@ -38,7 +37,6 @@ from engine.entities.layout import (
     SizeBox,
     Stack,
 )
-from engine.entities.state import EntityState
 from engine.models import Color, EdgeInset, FrameContext, Position, Size
 from engine.state import SimpleState
 from game.state import PlayerState, RoomState, State
@@ -321,9 +319,7 @@ class CharacterBarIcon:
                         ),
                         OnClick(
                             tag=tag,
-                            callback=lambda *_: State.set_selected_player(
-                                None if selected() else p
-                            ),
+                            callback=lambda *_: State.toggle_selected_player(p),
                         ),
                         PositionGroup(
                             components=[
@@ -416,42 +412,38 @@ class GamePlayer:
     def build(p: PlayerState, y_sort_store: list[tuple[Entity, float]]) -> Entity:
         player_scale = 1.2
 
-        return Stack(
+        return AnimatedSprite(
+            asset_key=lambda: p.character.idle_asset_key,
+            size=Size(
+                width=State.game.scale * player_scale,
+                height=State.game.scale * player_scale,
+            ),
             components=[
-                Translate(
-                    get_position=lambda: Position(
-                        x=p.x * State.game.scale + State.game.scale * 0.1,
-                        y=p.y * State.game.scale
-                        - State.game.scale * (player_scale - 0.5),
-                    )
-                ),
-            ],
-            children=[
-                AnimatedSprite(
-                    asset_key=lambda: p.character.idle_asset_key,
-                    size=Size(
-                        width=State.game.scale * player_scale,
-                        height=State.game.scale * player_scale,
-                    ),
+                PositionGroup(
                     components=[
-                        PositionGroup(
-                            components=[
-                                RandomWander(scale=State.game.scale),
-                                PositionTransition(speed=20),
-                                WalkOnPosChange(
-                                    walk_asset_key=p.character.walk_asset_key
-                                ),
-                            ]
+                        Translate(
+                            get_position=lambda: Position(
+                                x=p.x * State.game.scale + State.game.scale * 0.1,
+                                y=p.y * State.game.scale
+                                - State.game.scale * (player_scale - 0.5),
+                            )
                         ),
-                        YDepthSort(y_sort_store),
-                        OnMouseEnter(callback=lambda *_: State.set_hovered_player(p)),
-                        OnMouseLeave(
-                            callback=lambda *_: State.set_hovered_player(None)
-                        ),
-                        OnClick(callback=lambda *_: State.set_selected_player(p)),
-                        SetCursor(cursor="hand1"),
-                    ],
-                )
+                        PositionTransition(speed=64),
+                        WalkOnPosChange(walk_asset_key=p.character.walk_asset_key),
+                    ]
+                ),
+                PositionGroup(
+                    components=[
+                        RandomWander(scale=State.game.scale),
+                        PositionTransition(speed=20),
+                        WalkOnPosChange(walk_asset_key=p.character.walk_asset_key),
+                    ]
+                ),
+                YDepthSort(y_sort_store),
+                OnMouseEnter(callback=lambda *_: State.set_hovered_player(p)),
+                OnMouseLeave(callback=lambda *_: State.set_hovered_player(None)),
+                OnClick(callback=lambda *_: State.toggle_selected_player(p)),
+                SetCursor(cursor="hand1"),
             ],
         )
 
@@ -499,10 +491,11 @@ class AvailableTiles:
 
         queue = [(p.x, p.y)]
         visited = set()
+        distances = {(p.x, p.y): 0}
 
         while len(queue) > 0:
             x, y = queue.pop(0)
-            dst = abs(x - p.x) + abs(y - p.y)
+            dst = distances.get((x, y), 0)
             tiles.append(AvailableTiles.create_tile(x, y, dst))
             visited.add((x, y))
 
@@ -516,8 +509,10 @@ class AvailableTiles:
                 if (nx, ny) in visited:
                     continue
 
-                if abs(nx - p.x) + abs(ny - p.y) > State.game.available_stemps:
+                if dst + 1 > State.game.available_stemps:
                     continue
+
+                distances[(nx, ny)] = dst + 1
 
                 queue.append((nx, ny))
 

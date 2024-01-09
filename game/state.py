@@ -131,8 +131,11 @@ class State:
     selected_player: PlayerState | None = None
 
     @staticmethod
-    def set_selected_player(p: PlayerState | None):
-        State.selected_player = p
+    def toggle_selected_player(p: PlayerState):
+        if State.selected_player == p:
+            State.selected_player = None
+        else:
+            State.selected_player = p
 
     @staticmethod
     def move_selected_player_to(x: int, y: int):
