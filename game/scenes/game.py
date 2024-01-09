@@ -1,8 +1,9 @@
 import random
 from tkinter.font import Font
+from typing import Any
 from engine.animation.utils import Easing
 from engine.entities.basic import AnimatedSprite, Entity, Rect, Text
-from engine.entities.components.base import Bind
+from engine.entities.components.base import Bind, Component
 from engine.entities.components.debug import DebugBounds
 from engine.entities.components.events import (
     OnClick,
@@ -29,7 +30,7 @@ from engine.entities.layout import (
     SizeBox,
     Stack,
 )
-from engine.models import EdgeInset, Position, Size
+from engine.models import EdgeInset, FrameContext, Position, Size
 from game.state import PlayerState, RoomState, State
 from game.theme_colors import ThemeColors
 from game.widgets.button import Button
@@ -300,6 +301,79 @@ class CharacterBarIcon:
         )
 
 
+class RandomWander(Component):
+    def __init__(self, enabled: bool = True, scale: float = 32):
+        self.enabled = enabled
+        self.scale = scale
+        self.random_offset = self.get_random_position()
+
+    def before_paint(
+        self,
+        entity: Entity,
+        ctx: FrameContext,
+        position: Position,
+        size: Size,
+        state: Any | None,
+    ):
+        if random.random() < 0.1 * ctx.delta_time and self.enabled:
+            self.random_offset = self.get_random_position()
+
+        position.mut_add(self.random_offset)
+
+    def get_random_position(self):
+        rand_x = (random.random() * 2 - 1) * self.scale * 0.4
+        rand_y = (random.random() * 2 - 1) * self.scale * 0.4
+        return Position(x=rand_x, y=rand_y)
+
+
+class WalkOnPosChange(Component):
+    def __init__(self, walk_asset_key: str):
+        self.walk_asset_key = walk_asset_key
+        self.last_pos = Position.zero()
+
+    def before_paint(
+        self,
+        entity: Entity,
+        ctx: FrameContext,
+        position: Position,
+        size: Size,
+        state: Any | None,
+    ):
+        if self.last_pos != position:
+            if state is None:
+                raise Exception("State is required")
+            state.asset_key = self.walk_asset_key
+            self.last_pos = position.copy()
+
+
+class GamePlayer:
+    @staticmethod
+    def build(p: PlayerState, scale: float = 32) -> Entity:
+        player_scale = 1.2
+
+        return Stack(
+            components=[
+                Translate(
+                    get_position=lambda: Position(
+                        x=p.x * scale + scale * 0.1,
+                        y=p.y * scale - scale * (player_scale - 0.5),
+                    )
+                ),
+                RandomWander(scale=scale),
+                PositionTransition(speed=20),
+            ],
+            children=[
+                AnimatedSprite(
+                    asset_key=lambda: p.character.idle_asset_key,
+                    size=Size(width=scale * player_scale, height=scale * player_scale),
+                    components=[
+                        WalkOnPosChange(walk_asset_key=p.character.walk_asset_key),
+                    ],
+                )
+            ],
+        )
+
+
 class Game:
     @staticmethod
     def build() -> Entity:
@@ -327,6 +401,7 @@ class Game:
                                 for room in State.game.board
                             ],
                             *[GameRoom.build(room, 50) for room in State.game.board],
+                            *[GamePlayer.build(p, 50) for p in State.game.players],
                         ],
                     ),
                 ),

@@ -32,6 +32,8 @@ class PlayerState:
         self.character = character
         self.human = human
         self.revealed_times = 0
+        self.x = 2
+        self.y = 2
 
 
 @dataclass
