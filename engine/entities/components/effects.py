@@ -365,6 +365,7 @@ class SetCursor(Component):
 class StartOnTop(Component):
     def __init__(self, *, offset: float = 0):
         self.offset = offset
+        self.first = True
 
     def before_paint(
         self,
@@ -374,8 +375,12 @@ class StartOnTop(Component):
         size: Size,
         state: Any | None,
     ):
+        if not self.first:
+            return
+
         position.y -= position.y + size.height - self.offset
         entity.canvas.after_idle(lambda: entity.components.remove(self))
+        self.first = False
 
 
 class StartOnFill(Component):
@@ -383,6 +388,7 @@ class StartOnFill(Component):
         self.fill = fill
         self.delay = delay
         self.start = 0
+        self.done = False
 
     def create(self, entity: Entity):
         self.start = timer()
@@ -395,6 +401,9 @@ class StartOnFill(Component):
         size: Size,
         state: Any | None,
     ):
+        if self.done:
+            return
+
         if state is None or not hasattr(state, "fill"):
             raise Exception(
                 "StartOnFill component must be on an entity which supports fill"
@@ -404,3 +413,4 @@ class StartOnFill(Component):
 
         if timer() - self.start > self.delay:
             entity.canvas.after_idle(lambda: entity.components.remove(self))
+            self.done = True

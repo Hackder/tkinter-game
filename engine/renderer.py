@@ -21,6 +21,7 @@ class Renderer:
         self.log = logger.getChild("Renderer")
         self.scene: RootScene | None = None
         self.root = Tk()
+        self.root.attributes("-fullscreen", True)
         self.root.geometry(f"{window_width}x{window_height}")
         self.canvas = Canvas(self.root, highlightthickness=0, background=bg.to_hex())
         self.canvas.pack(fill="both", expand=True)
