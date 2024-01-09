@@ -187,11 +187,14 @@ class Color(Transitionable):
     r: int
     g: int
     b: int
+    _transparent: bool = False
 
     def copy(self):
         return copy.copy(self)
 
     def to_hex(self) -> str:
+        if self._transparent:
+            return ""
         return f"#{self.r:02x}{self.g:02x}{self.b:02x}"
 
     def to_hls(self) -> tuple[float, float, float]:
@@ -253,6 +256,10 @@ class Color(Transitionable):
     @staticmethod
     def yellow() -> Color:
         return Color(r=255, g=255, b=0)
+
+    @staticmethod
+    def transparent() -> Color:
+        return Color(r=0, g=0, b=0, _transparent=True)
 
 
 class EdgeInset:

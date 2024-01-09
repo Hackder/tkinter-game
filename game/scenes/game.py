@@ -1,11 +1,24 @@
+from tkinter.font import Font
 from engine.entities.basic import Entity, Rect, Text
 from engine.entities.components.debug import DebugBounds
 from engine.entities.components.events import OnClick, OnDrag
 from engine.entities.components.layout import Translate
-from engine.entities.layout import Center, Scene, SizeBox, Stack
-from engine.models import Color, Position, Size
+from engine.entities.conditional import EntitySwitch
+from engine.entities.layout import (
+    Alignment,
+    Center,
+    Expanded,
+    Flex,
+    FlexDirection,
+    Padding,
+    Scene,
+    SizeBox,
+    Stack,
+)
+from engine.models import Color, EdgeInset, Position, Size
 from game.state import RoomState, State
 from game.theme_colors import ThemeColors
+from game.widgets.button import Button
 
 
 class GameRoom:
@@ -78,6 +91,90 @@ class GameRoomHalo:
         )
 
 
+class PauseMenu:
+    @staticmethod
+    def build() -> Entity:
+        return Rect(
+            fill=ThemeColors.bg(),
+            components=[OnDrag(drag=print)],
+            child=Center(
+                child=Rect(
+                    fill=ThemeColors.bg_secondary(),
+                    size=Size(width=300, height=300),
+                    child=Padding(
+                        padding=EdgeInset.all(20),
+                        child=Flex(
+                            direction=FlexDirection.Column,
+                            align=Alignment.Stretch,
+                            gap=10,
+                            children=[
+                                Flex(
+                                    direction=FlexDirection.Row,
+                                    children=[
+                                        Expanded(),
+                                        Text(
+                                            text=lambda: "Game Paused",
+                                            font=Font(size=24, weight="bold"),
+                                            fill=ThemeColors.fg(),
+                                        ),
+                                        Expanded(),
+                                    ],
+                                ),
+                                Expanded(),
+                                Button.build(
+                                    title="Resume",
+                                    size="md",
+                                    on_click=lambda *_: State.toggle_game_paused(),
+                                ),
+                                Button.build(
+                                    title="Save",
+                                    size="md",
+                                    on_click=lambda *_: State.save_game("test"),
+                                ),
+                                Button.build(
+                                    title="Quit",
+                                    size="md",
+                                    on_click=lambda *_: State.set_scene("menu"),
+                                ),
+                            ],
+                        ),
+                    ),
+                )
+            ),
+        )
+
+
+class GameUI:
+    @staticmethod
+    def build() -> Entity:
+        return Padding(
+            padding=EdgeInset.all(10),
+            child=Flex(
+                direction=FlexDirection.Column,
+                align=Alignment.Stretch,
+                children=[
+                    Flex(
+                        direction=FlexDirection.Row,
+                        children=[
+                            Expanded(),
+                            Text(
+                                text=lambda: "Game",
+                                font=Font(size=24, weight="bold"),
+                                fill=ThemeColors.fg(),
+                            ),
+                            Expanded(),
+                            Button.build(
+                                title="Pause",
+                                size="sm",
+                                on_click=lambda *_: State.toggle_game_paused(),
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        )
+
+
 class Game:
     @staticmethod
     def build() -> Entity:
@@ -100,10 +197,21 @@ class Game:
                             Translate(get_position=lambda: State.game_view_offset),
                         ],
                         children=[
-                            *[GameRoomHalo.build(room) for room in State.game.board],
-                            *[GameRoom.build(room) for room in State.game.board],
+                            *[
+                                GameRoomHalo.build(room, 50)
+                                for room in State.game.board
+                            ],
+                            *[GameRoom.build(room, 50) for room in State.game.board],
                         ],
                     ),
+                ),
+                GameUI.build(),
+                EntitySwitch(
+                    current=lambda: State.game_paused,
+                    entities={
+                        True: PauseMenu.build,
+                        False: Scene,
+                    },
                 ),
             ],
         )

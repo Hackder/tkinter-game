@@ -1,7 +1,6 @@
 from __future__ import annotations
 from random import random
 from abc import ABC, abstractmethod
-from enum import StrEnum
 from typing import Any
 
 from engine.models import Position, Size, FrameContext

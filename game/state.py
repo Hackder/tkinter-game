@@ -76,6 +76,8 @@ class State:
 
     @staticmethod
     def set_scene(scene: State.Scene):
+        if scene == "new_game":
+            State.game = GameState()
         State.scene = scene
 
     NewGameSection = Literal["choose_n_players", "view_characters", "view_board"]
@@ -102,3 +104,13 @@ class State:
     @staticmethod
     def move_game_view(dx: int, dy: int):
         State.game_view_offset.mut_add((dx, dy))
+
+    game_paused = False
+
+    @staticmethod
+    def toggle_game_paused():
+        State.game_paused = not State.game_paused
+
+    @staticmethod
+    def save_game(path: str):
+        print(path)
