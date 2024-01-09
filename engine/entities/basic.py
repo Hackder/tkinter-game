@@ -3,7 +3,7 @@ import copy
 from abc import ABC, abstractmethod
 from tkinter import Canvas
 from tkinter.font import Font
-from typing import Any
+from typing import Any, Literal
 from timeit import default_timer as timer
 from engine.entities.state import EntityState
 from engine.entities.types import BoundValue
@@ -177,14 +177,23 @@ class Rect(Entity):
 
 
 class TextState(EntityState):
+    justify: Literal["left", "center", "right"]
+
     def __init__(
-        self, *, text: BoundValue[str], width: float | None, fill: Color, font: Font
+        self,
+        *,
+        text: BoundValue[str],
+        width: float | None,
+        fill: Color,
+        font: Font,
+        justify: Literal["left", "center", "right"],
     ):
         self._bound_text = text
         self.text = text()
         self.width = width
         self.fill = fill
         self.font = font
+        self.justify = justify
 
     def copy(self):
         return TextState(
@@ -192,6 +201,7 @@ class TextState(EntityState):
             width=self.width,
             fill=self.fill,
             font=self.font.copy(),
+            justify=self.justify,
         )
 
 
@@ -207,11 +217,14 @@ class Text(Entity):
         width: float | None = None,
         fill: Color = Color.black(),
         font: Font | None = None,
+        justify: Literal["left", "center", "right"] = "left",
         components: list[Component] = [],
     ):
         super().__init__(tag=tag, components=components)
         f = font if font is not None else Font(family="Helvetica", size=12)
-        self.state = TextState(text=text, width=width, fill=fill, font=f)
+        self.state = TextState(
+            text=text, width=width, fill=fill, font=f, justify=justify
+        )
         self._state = self.state.copy()
         self._size = Size(width=0, height=0)
 
@@ -241,6 +254,7 @@ class Text(Entity):
             fill=self._state.fill.to_hex(),
             width=self._size.width,
             font=self._state.font,
+            justify=self._state.justify,
         )
         self.canvas.tag_raise(self.id)
 
