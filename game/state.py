@@ -142,3 +142,47 @@ class State:
         State.selected_player.x = x
         State.selected_player.y = y
         State.selected_player = None
+
+    _last_board: list[RoomState] | None = None
+    _tile_position_array: list[list[bool]] | None = None
+    _tile_position_y_offset: int = 0
+
+    @staticmethod
+    def get_tile_position_array() -> list[list[bool]]:
+        if (
+            State.game.board == State._last_board
+            and State._tile_position_array is not None
+        ):
+            return State._tile_position_array
+
+        State._last_board = State.game.board
+
+        min_x = min(room.x for room in State.game.board)
+        min_y = min(room.y for room in State.game.board)
+        max_x = max(room.x + room.width for room in State.game.board)
+        max_y = max(room.y + room.height for room in State.game.board)
+
+        State._tile_position_y_offset = min_y
+
+        State._tile_position_array = [
+            [False for _ in range(min_x, max_x)] for _ in range(min_y, max_y)
+        ]
+
+        for room in State.game.board:
+            for x in range(room.x, room.x + room.width):
+                for y in range(room.y, room.y + room.height):
+                    State._tile_position_array[y - min_y][x - min_x] = True
+
+        return State._tile_position_array
+
+    @staticmethod
+    def is_position_in_board(x: int, y: int):
+        positions = State.get_tile_position_array()
+        y -= State._tile_position_y_offset
+
+        if y < 0 or y >= len(positions):
+            return False
+        if x < 0 or x >= len(positions[y]):
+            return False
+
+        return positions[y][x]

@@ -497,22 +497,29 @@ class AvailableTiles:
 
         tiles: list[Entity] = []
 
-        for distance in range(State.game.available_stemps + 1):
-            for x in range(-distance, distance + 1):
-                for y in range(-distance, distance + 1):
-                    if abs(x) + abs(y) != distance:
-                        continue
+        queue = [(p.x, p.y)]
+        visited = set()
 
-                    for room in State.game.board:
-                        if (
-                            room.x <= p.x + x < room.x + room.width
-                            and room.y <= p.y + y < room.y + room.height
-                        ):
-                            break
-                    else:
-                        continue
+        while len(queue) > 0:
+            x, y = queue.pop(0)
+            dst = abs(x - p.x) + abs(y - p.y)
+            tiles.append(AvailableTiles.create_tile(x, y, dst))
+            visited.add((x, y))
 
-                    tiles.append(AvailableTiles.create_tile(p.x + x, p.y + y, distance))
+            for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                nx = x + dx
+                ny = y + dy
+
+                if not State.is_position_in_board(nx, ny):
+                    continue
+
+                if (nx, ny) in visited:
+                    continue
+
+                if abs(nx - p.x) + abs(ny - p.y) > State.game.available_stemps:
+                    continue
+
+                queue.append((nx, ny))
 
         return tiles
 
