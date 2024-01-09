@@ -38,7 +38,7 @@ from game.widgets.button import Button
 
 class GameRoom:
     @staticmethod
-    def build(room: RoomState, scale: float = 32) -> Entity:
+    def build(room: RoomState) -> Entity:
         fill = ThemeColors.bg_secondary()
         if room == State.game.start_room:
             fill = ThemeColors.bg_tertiary()
@@ -47,13 +47,20 @@ class GameRoom:
 
         return Stack(
             components=[
-                Translate(position=Position(x=room.x * scale, y=room.y * scale))
+                Translate(
+                    position=Position(
+                        x=room.x * State.game.scale, y=room.y * State.game.scale
+                    )
+                )
             ],
             children=[
                 Rect(
                     tag="draggable",
                     fill=fill,
-                    size=Size(width=room.width * scale, height=room.height * scale),
+                    size=Size(
+                        width=room.width * State.game.scale,
+                        height=room.height * State.game.scale,
+                    ),
                 ),
                 Scene(
                     children=[
@@ -61,9 +68,15 @@ class GameRoom:
                             Rect(
                                 tag="draggable",
                                 components=[
-                                    Translate(position=Position(y=0, x=(i + 1) * scale))
+                                    Translate(
+                                        position=Position(
+                                            y=0, x=(i + 1) * State.game.scale
+                                        )
+                                    )
                                 ],
-                                size=Size(width=1, height=room.height * scale),
+                                size=Size(
+                                    width=1, height=room.height * State.game.scale
+                                ),
                                 outline_width=0,
                                 fill=ThemeColors.bg(),
                             )
@@ -73,9 +86,15 @@ class GameRoom:
                             Rect(
                                 tag="draggable",
                                 components=[
-                                    Translate(position=Position(x=0, y=(i + 1) * scale))
+                                    Translate(
+                                        position=Position(
+                                            x=0, y=(i + 1) * State.game.scale
+                                        )
+                                    )
                                 ],
-                                size=Size(width=room.width * scale, height=1),
+                                size=Size(
+                                    width=room.width * State.game.scale, height=1
+                                ),
                                 outline_width=0,
                                 fill=ThemeColors.bg(),
                             )
@@ -89,13 +108,16 @@ class GameRoom:
 
 class GameRoomHalo:
     @staticmethod
-    def build(room: RoomState, scale: float = 32, size: float = 10) -> Entity:
+    def build(room: RoomState, size: float = 10) -> Entity:
         return SizeBox(
-            width=room.width * scale + size * 2,
-            height=room.height * scale + size * 2,
+            width=room.width * State.game.scale + size * 2,
+            height=room.height * State.game.scale + size * 2,
             components=[
                 Translate(
-                    position=Position(x=room.x * scale - size, y=room.y * scale - size)
+                    position=Position(
+                        x=room.x * State.game.scale - size,
+                        y=room.y * State.game.scale - size,
+                    )
                 ),
             ],
             child=Stack(
@@ -105,8 +127,8 @@ class GameRoomHalo:
                         fill=ThemeColors.muted(),
                         outline_width=0,
                         size=Size(
-                            width=room.width * scale + size * 2,
-                            height=room.height * scale + size * 2,
+                            width=room.width * State.game.scale + size * 2,
+                            height=room.height * State.game.scale + size * 2,
                         ),
                     )
                 ]
@@ -381,28 +403,30 @@ class YDepthSort(Component):
 
 class GamePlayer:
     @staticmethod
-    def build(
-        p: PlayerState, y_sort_store: list[tuple[Entity, float]], scale: float = 32
-    ) -> Entity:
+    def build(p: PlayerState, y_sort_store: list[tuple[Entity, float]]) -> Entity:
         player_scale = 1.2
 
         return Stack(
             components=[
                 Translate(
                     get_position=lambda: Position(
-                        x=p.x * scale + scale * 0.1,
-                        y=p.y * scale - scale * (player_scale - 0.5),
+                        x=p.x * State.game.scale + State.game.scale * 0.1,
+                        y=p.y * State.game.scale
+                        - State.game.scale * (player_scale - 0.5),
                     )
                 ),
             ],
             children=[
                 AnimatedSprite(
                     asset_key=lambda: p.character.idle_asset_key,
-                    size=Size(width=scale * player_scale, height=scale * player_scale),
+                    size=Size(
+                        width=State.game.scale * player_scale,
+                        height=State.game.scale * player_scale,
+                    ),
                     components=[
                         PositionGroup(
                             components=[
-                                RandomWander(scale=scale),
+                                RandomWander(scale=State.game.scale),
                                 PositionTransition(speed=20),
                                 WalkOnPosChange(
                                     walk_asset_key=p.character.walk_asset_key
@@ -447,12 +471,12 @@ class Game:
                         ],
                         children=[
                             *[
-                                GameRoomHalo.build(room, 50)
+                                GameRoomHalo.build(room, 10)
                                 for room in State.game.board
                             ],
-                            *[GameRoom.build(room, 50) for room in State.game.board],
+                            *[GameRoom.build(room) for room in State.game.board],
                             *[
-                                GamePlayer.build(p, y_sort_store, 50)
+                                GamePlayer.build(p, y_sort_store)
                                 for p in State.game.players
                             ],
                             Scene(

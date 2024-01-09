@@ -49,6 +49,7 @@ class GameState:
     board: list[RoomState] = []
     start_room: RoomState | None = None
     end_room: RoomState | None = None
+    scale: float = 50
 
     def create_players(self, n: int):
         chars = random.sample(Character.all(), k=2 * n)
