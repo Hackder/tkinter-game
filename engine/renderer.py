@@ -16,6 +16,7 @@ class Renderer:
         window_height: float,
         asset_folder: str,
         bg: Color = ThemeColors.fg(),
+        metrics: bool = False,
     ):
         self.log = logger.getChild("Renderer")
         self.scene: RootScene | None = None
@@ -29,6 +30,7 @@ class Renderer:
         self.engine_time = 0
         self.frames = 0
         self.last_metrics = timer()
+        self.metrics = metrics
 
     def assign_scene(self, scene: RootScene):
         if self.scene is not None:
@@ -55,20 +57,21 @@ class Renderer:
         self.scene.layout(ctx)
         self.scene.paint(ctx)
 
-        new_now = timer()
-        self.engine_time += new_now - now
-        self.frames += 1
+        if self.metrics:
+            new_now = timer()
+            self.engine_time += new_now - now
+            self.frames += 1
 
-        if new_now - self.last_metrics > 1:
-            self.log.info(
-                f"Frames renderred: %d, Engine time: %f ms, Engine frame time: %f ms",
-                self.frames,
-                self.engine_time * 1000,
-                self.engine_time * 1000 / self.frames,
-            )
-            self.frames = 0
-            self.engine_time = 0
-            self.last_metrics = new_now
+            if new_now - self.last_metrics > 1:
+                self.log.info(
+                    f"Frames renderred: %d, Engine time: %f ms, Engine frame time: %f ms",
+                    self.frames,
+                    self.engine_time * 1000,
+                    self.engine_time * 1000 / self.frames,
+                )
+                self.frames = 0
+                self.engine_time = 0
+                self.last_metrics = new_now
 
         # after_idle does not work on macos
         # https://github.com/python/cpython/issues/100617

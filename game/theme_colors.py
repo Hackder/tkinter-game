@@ -27,9 +27,17 @@ class ThemeColors:
         return Color.from_hex("#312541")
 
     @staticmethod
+    def bg_tertiary() -> Color:
+        return Color.from_hex("#3B2D4E")
+
+    @staticmethod
     def primary() -> Color:
         return Color.from_hex("#45335A")
 
     @staticmethod
     def gold() -> Color:
         return Color.from_hex("#F0C808")
+
+    @staticmethod
+    def gold_secondary() -> Color:
+        return Color.from_hex("#F5D329")

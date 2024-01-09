@@ -55,3 +55,12 @@ class Hook(Component):
     def before_layout(self, entity: Entity, ctx: FrameContext, state: Any | None):
         if self._before_layout is not None:
             self._before_layout(entity, ctx, state)
+
+
+class Bind(Component):
+    def __init__(self, property: str, getter: Callable):
+        self.property = property
+        self.getter = getter
+
+    def before_layout(self, entity: Entity, ctx: FrameContext, state: Any | None):
+        setattr(state, self.property, self.getter())

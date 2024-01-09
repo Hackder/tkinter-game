@@ -99,6 +99,11 @@ class State:
         p.revealed_times += 1
 
     game = GameState()
+
+    @staticmethod
+    def save_game(path: str):
+        print(path)
+
     game_view_offset = Position.zero()
 
     @staticmethod
@@ -111,6 +116,14 @@ class State:
     def toggle_game_paused():
         State.game_paused = not State.game_paused
 
+    hovered_player: PlayerState | None = None
+
     @staticmethod
-    def save_game(path: str):
-        print(path)
+    def set_hovered_player(p: PlayerState | None):
+        State.hovered_player = p
+
+    selected_player: PlayerState | None = None
+
+    @staticmethod
+    def set_selected_player(p: PlayerState | None):
+        State.selected_player = p

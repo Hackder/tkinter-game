@@ -348,10 +348,13 @@ class AnimatedSpriteState(EntityState):
     def __init__(
         self,
         *,
+        paused: BoundValue[bool],
         asset_key: BoundValue[str],
         size: Size | None = None,
         speed: float = 1.0,
     ):
+        self._bound_paused = paused
+        self.paused = paused()
         self._bound_asset_key = asset_key
         self.asset_key = asset_key()
         self.size = size
@@ -372,10 +375,11 @@ class AnimatedSprite(Entity):
         tag: str | None = None,
         size: Size | None = None,
         asset_key: BoundValue[str],
+        paused: BoundValue[bool] = lambda: False,
         components: list[Component] = [],
     ):
         super().__init__(tag=tag, components=components)
-        self.state = AnimatedSpriteState(asset_key=asset_key, size=size)
+        self.state = AnimatedSpriteState(asset_key=asset_key, size=size, paused=paused)
         self._state = self.state.copy()
         self._size = Size(width=10, height=10)
 
@@ -388,7 +392,7 @@ class AnimatedSprite(Entity):
 
     def create(self, canvas: Canvas):
         self.canvas = canvas
-        self.id = canvas.create_image(0, 0, image="", anchor="nw")
+        self.id = canvas.create_image(0, 0, image="", anchor="nw", tags=[self.tag])
 
         for component in self.components:
             component.create(self)
@@ -416,14 +420,15 @@ class AnimatedSprite(Entity):
             and raw_asset.animation is not None
         ):
             now = timer()
-            if now - self._state.frame_time > self._state.speed * (
-                1 / raw_asset.animation.fps
+            if (
+                now - self._state.frame_time
+                > self._state.speed * (1 / raw_asset.animation.fps)
+                and not self._state.paused
             ):
-                self.state.frame_idx = (
-                    self.state.frame_idx + 1
-                ) % raw_asset.animation.tile_count
+                self.state.frame_idx += 1
                 self.state.frame_time = now
 
+            self.state.frame_idx %= len(asset_list)
             asset = asset_list[self.state.frame_idx]
 
         self.canvas.coords(self.id, pos.x, pos.y)

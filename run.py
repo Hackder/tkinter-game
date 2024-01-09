@@ -44,7 +44,9 @@ if __name__ == "__main__":
     logging.getLogger("Engine").setLevel(options.log_level)
 
     asset_folder = os.path.join(os.path.dirname(__file__), "game/assets")
-    renderer = Renderer(options.width, options.height, asset_folder, ThemeColors.bg())
+    renderer = Renderer(
+        options.width, options.height, asset_folder, ThemeColors.bg(), options.metrics
+    )
 
     from game.game import scene
 

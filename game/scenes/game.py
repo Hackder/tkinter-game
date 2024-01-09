@@ -1,8 +1,21 @@
+import random
 from tkinter.font import Font
 from engine.animation.utils import Easing
-from engine.entities.basic import Entity, Rect, Text
-from engine.entities.components.events import OnDrag
-from engine.entities.components.effects import PositionTransition, StartOnTop
+from engine.entities.basic import AnimatedSprite, Entity, Rect, Text
+from engine.entities.components.base import Bind
+from engine.entities.components.debug import DebugBounds
+from engine.entities.components.events import (
+    OnClick,
+    OnDrag,
+    OnMouseEnter,
+    OnMouseLeave,
+)
+from engine.entities.components.effects import (
+    FillTransition,
+    PositionTransition,
+    SetCursor,
+    StartOnTop,
+)
 from engine.entities.components.layout import Translate
 from engine.entities.conditional import EntitySwitch
 from engine.entities.layout import (
@@ -17,7 +30,7 @@ from engine.entities.layout import (
     Stack,
 )
 from engine.models import EdgeInset, Position, Size
-from game.state import RoomState, State
+from game.state import PlayerState, RoomState, State
 from game.theme_colors import ThemeColors
 from game.widgets.button import Button
 
@@ -25,6 +38,12 @@ from game.widgets.button import Button
 class GameRoom:
     @staticmethod
     def build(room: RoomState, scale: float = 32) -> Entity:
+        fill = ThemeColors.bg_secondary()
+        if room == State.game.start_room:
+            fill = ThemeColors.bg_tertiary()
+        elif room == State.game.end_room:
+            fill = ThemeColors.gold()
+
         return Stack(
             components=[
                 Translate(position=Position(x=room.x * scale, y=room.y * scale))
@@ -32,13 +51,14 @@ class GameRoom:
             children=[
                 Rect(
                     tag="draggable",
-                    fill=ThemeColors.bg_secondary(),
+                    fill=fill,
                     size=Size(width=room.width * scale, height=room.height * scale),
                 ),
                 Scene(
                     children=[
                         *[
                             Rect(
+                                tag="draggable",
                                 components=[
                                     Translate(position=Position(y=0, x=(i + 1) * scale))
                                 ],
@@ -50,6 +70,7 @@ class GameRoom:
                         ],
                         *[
                             Rect(
+                                tag="draggable",
                                 components=[
                                     Translate(position=Position(x=0, y=(i + 1) * scale))
                                 ],
@@ -158,25 +179,124 @@ class GameUI:
                 direction=FlexDirection.Column,
                 align=Alignment.Stretch,
                 children=[
-                    Flex(
-                        direction=FlexDirection.Row,
+                    Stack(
                         children=[
-                            Expanded(),
-                            Text(
-                                text=lambda: "Game",
-                                font=Font(size=24, weight="bold"),
-                                fill=ThemeColors.fg(),
+                            Flex(
+                                direction=FlexDirection.Row,
+                                children=[
+                                    Expanded(),
+                                    Rect(
+                                        fill=ThemeColors.fg(),
+                                        outline_width=2,
+                                        components=[
+                                            Translate(position=Position(x=0, y=-10))
+                                        ],
+                                        child=Padding(
+                                            padding=EdgeInset(10, 20, 10, 20),
+                                            child=Text(
+                                                text=lambda: "Game",
+                                                font=Font(size=24, weight="bold"),
+                                                fill=ThemeColors.fg_inverse(),
+                                            ),
+                                        ),
+                                    ),
+                                    Expanded(),
+                                ],
                             ),
-                            Expanded(),
-                            Button.build(
-                                title="Pause",
-                                size="sm",
-                                on_click=lambda *_: State.toggle_game_paused(),
+                            Flex(
+                                direction=FlexDirection.Row,
+                                children=[
+                                    Expanded(),
+                                    Button.build(
+                                        title="Pause",
+                                        size="sm",
+                                        on_click=lambda *_: State.toggle_game_paused(),
+                                    ),
+                                ],
                             ),
-                        ],
+                        ]
                     ),
+                    Expanded(),
+                    GameUI.character_bar(),
                 ],
             ),
+        )
+
+    @staticmethod
+    def character_bar() -> Entity:
+        return Flex(
+            direction=FlexDirection.Row,
+            gap=10,
+            children=[
+                Expanded(),
+                *[CharacterBarIcon.build(p) for p in State.game.players],
+                Expanded(),
+            ],
+        )
+
+
+class CharacterBarIcon:
+    @staticmethod
+    def build(p: PlayerState) -> Entity:
+        def hovered():
+            return State.hovered_player == p
+
+        def selected():
+            return State.selected_player == p
+
+        def get_offset():
+            if hovered():
+                return Position(x=0, y=-15)
+            return Position(x=0, y=-5)
+
+        tag = random.randbytes(8).hex()
+
+        return Stack(
+            children=[
+                Rect(
+                    tag=tag,
+                    fill=ThemeColors.primary(),
+                    size=Size(width=64, height=24),
+                    components=[
+                        Bind(
+                            "fill",
+                            lambda: ThemeColors.fg()
+                            if hovered()
+                            else ThemeColors.muted()
+                            if selected()
+                            else ThemeColors.primary(),
+                        ),
+                        SetCursor(cursor="hand1"),
+                        Translate(position=Position(x=0, y=40)),
+                        FillTransition(easing=Easing.ease_out, duration=0.2),
+                    ],
+                ),
+                AnimatedSprite(
+                    tag=tag,
+                    asset_key=lambda: p.character.walk_asset_key
+                    if selected()
+                    else p.character.idle_asset_key,
+                    size=Size(width=64, height=64),
+                    paused=lambda: not hovered() and not selected(),
+                    components=[
+                        SetCursor(cursor="hand1"),
+                        OnMouseEnter(
+                            tag=tag, callback=lambda *_: State.set_hovered_player(p)
+                        ),
+                        OnMouseLeave(
+                            tag=tag, callback=lambda *_: State.set_hovered_player(None)
+                        ),
+                        OnClick(
+                            tag=tag,
+                            callback=lambda *_: State.set_selected_player(
+                                None if selected() else p
+                            ),
+                        ),
+                        Translate(get_position=lambda: get_offset()),
+                        PositionTransition(easing=Easing.ease_out, duration=0.2),
+                    ],
+                ),
+            ],
         )
 
 

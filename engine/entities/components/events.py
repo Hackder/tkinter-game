@@ -72,3 +72,43 @@ class OnDrag(Component):
         self.start = (e.x, e.y)
         self.last = (e.x, e.y)
         self.dragging = True
+
+
+class OnMouseEnter(Component):
+    def __init__(self, *, tag: None | str = None, callback: Callable):
+        self.callback = callback
+        self.tag = tag
+
+    def create(self, entity: Entity):
+        self.entity = entity
+        id_tag = self.tag or self.entity.id
+        self.event_id = self.entity.canvas.tag_bind(
+            id_tag, "<Enter>", self.on_enter, add="+"
+        )
+
+    def destroy(self, entity: Entity):
+        id_tag = self.tag or self.entity.id
+        entity.canvas.tag_unbind(id_tag, "<Enter>", self.event_id)
+
+    def on_enter(self, e):
+        self.callback(e, self.entity)
+
+
+class OnMouseLeave(Component):
+    def __init__(self, *, tag: None | str = None, callback: Callable):
+        self.callback = callback
+        self.tag = tag
+
+    def create(self, entity: Entity):
+        self.entity = entity
+        id_tag = self.tag or self.entity.id
+        self.event_id = self.entity.canvas.tag_bind(
+            id_tag, "<Leave>", self.on_leave, add="+"
+        )
+
+    def destroy(self, entity: Entity):
+        id_tag = self.tag or self.entity.id
+        entity.canvas.tag_unbind(id_tag, "<Leave>", self.event_id)
+
+    def on_leave(self, e):
+        self.callback(e, self.entity)
