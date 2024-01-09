@@ -1,7 +1,8 @@
 from tkinter.font import Font
+from engine.animation.utils import Easing
 from engine.entities.basic import Entity, Rect, Text
-from engine.entities.components.debug import DebugBounds
-from engine.entities.components.events import OnClick, OnDrag
+from engine.entities.components.events import OnDrag
+from engine.entities.components.effects import PositionTransition, StartOnTop
 from engine.entities.components.layout import Translate
 from engine.entities.conditional import EntitySwitch
 from engine.entities.layout import (
@@ -15,7 +16,7 @@ from engine.entities.layout import (
     SizeBox,
     Stack,
 )
-from engine.models import Color, EdgeInset, Position, Size
+from engine.models import EdgeInset, Position, Size
 from game.state import RoomState, State
 from game.theme_colors import ThemeColors
 from game.widgets.button import Button
@@ -100,7 +101,11 @@ class PauseMenu:
             child=Center(
                 child=Rect(
                     fill=ThemeColors.bg_secondary(),
-                    size=Size(width=300, height=300),
+                    size=Size(width=300, height=250),
+                    components=[
+                        StartOnTop(),
+                        PositionTransition(easing=Easing.ease_out, duration=0.8),
+                    ],
                     child=Padding(
                         padding=EdgeInset.all(20),
                         child=Flex(
@@ -127,12 +132,12 @@ class PauseMenu:
                                     on_click=lambda *_: State.toggle_game_paused(),
                                 ),
                                 Button.build(
-                                    title="Save",
+                                    title="Save Game",
                                     size="md",
                                     on_click=lambda *_: State.save_game("test"),
                                 ),
                                 Button.build(
-                                    title="Quit",
+                                    title="Main Menu",
                                     size="md",
                                     on_click=lambda *_: State.set_scene("menu"),
                                 ),

@@ -359,3 +359,20 @@ class SetCursor(Component):
 
     def leave(self, e):
         self.entity.canvas.config(cursor="")
+
+
+class StartOnTop(Component):
+    def __init__(self, *, offset: float = 0):
+        self.offset = offset
+        self.first = True
+
+    def before_paint(
+        self,
+        entity: Entity,
+        ctx: FrameContext,
+        position: Position,
+        size: Size,
+        state: Any | None,
+    ):
+        position.y -= position.y + size.height - self.offset
+        entity.canvas.after_idle(lambda: entity.components.remove(self))
