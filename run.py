@@ -8,6 +8,7 @@ if sys.version_info < (3, 12):
     sys.exit(1)
 
 import os
+import gc
 import logging
 from PIL.Image import Resampling
 from engine.renderer import Renderer
@@ -42,6 +43,8 @@ if __name__ == "__main__":
     options = CliOptions(sys.argv)
     logging.basicConfig(level=options.global_log_level)
     logging.getLogger("Engine").setLevel(options.log_level)
+    if options.metrics:
+        gc.set_debug(gc.DEBUG_STATS)
 
     asset_folder = os.path.join(os.path.dirname(__file__), "game/assets")
     renderer = Renderer(
