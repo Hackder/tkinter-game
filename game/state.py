@@ -51,6 +51,7 @@ class GameState:
     end_room: RoomState | None = None
     scale: float = 50
     available_stemps: int = 6
+    turn: int = 0
 
     def create_players(self, n: int):
         chars = random.sample(Character.all(), k=2 * n)
@@ -72,6 +73,12 @@ class GameState:
 
         self.start_room = self.board[0]
         self.end_room = self.board[-1]
+
+    def next_turn(self):
+        self.turn = (self.turn + 1) % len(list(self.humans()))
+
+    def current_player(self) -> PlayerState:
+        return self.players[self.turn]
 
 
 class State:

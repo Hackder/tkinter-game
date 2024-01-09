@@ -39,6 +39,7 @@ from engine.entities.layout import (
 )
 from engine.models import Color, EdgeInset, FrameContext, Position, Size
 from engine.state import SimpleState
+from game.scenes.dice import GameDice
 from game.state import PlayerState, RoomState, State
 from game.theme_colors import ThemeColors
 from game.widgets.button import Button
@@ -225,7 +226,7 @@ class GameUI:
                                         child=Padding(
                                             padding=EdgeInset(10, 20, 10, 20),
                                             child=Text(
-                                                text=lambda: "Game",
+                                                text=lambda: State.game.current_player().name,
                                                 font=Font(size=24, weight="bold"),
                                                 fill=ThemeColors.fg_inverse(),
                                             ),
@@ -576,6 +577,7 @@ class Game:
                         ],
                     ),
                 ),
+                GameDice.build(),
                 GameUI.build(),
                 EntitySwitch(
                     current=lambda: State.game_paused,
