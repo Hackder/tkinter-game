@@ -33,6 +33,6 @@ scene = RootScene(
                 entities=scenes,
             ),
         ),
-        # Metrics.build(),
+        Metrics.build(),
     ]
 )

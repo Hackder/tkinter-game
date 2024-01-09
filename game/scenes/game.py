@@ -577,7 +577,7 @@ class Game:
                         ],
                     ),
                 ),
-                GameDice.build(),
+                # GameDice.build(),
                 GameUI.build(),
                 EntitySwitch(
                     current=lambda: State.game_paused,
