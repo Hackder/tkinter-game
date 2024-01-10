@@ -334,7 +334,7 @@ class GameUI:
             gap=10,
             children=[
                 Expanded(),
-                *[CharacterBarIcon.build(p) for p in State.game.players],
+                *[CharacterBarIcon.build(p) for p in State.shuffled_players()],
                 Expanded(),
             ],
         )
@@ -537,7 +537,11 @@ class AvailableTiles:
                     )
                 ),
                 StartOnFill(
-                    fill=ThemeColors.bg_secondary(),
+                    fill=ThemeColors.bg_tertiary()
+                    if State.game.is_in_start_room(x, y)
+                    else ThemeColors.gold()
+                    if State.game.is_in_end_room(x, y)
+                    else ThemeColors.bg_secondary(),
                     delay=distance * 0.03,
                 ),
                 FillTransition(
@@ -608,6 +612,56 @@ class AvailableTiles:
         )
 
 
+class WinnerScreen:
+    @staticmethod
+    def build() -> Entity:
+        winner = State.game.winner
+        assert winner is not None
+        return Center(
+            child=Rect(
+                fill=ThemeColors.bg_secondary(),
+                size=Size(width=300, height=200),
+                components=[
+                    StartOnTop(),
+                    PositionTransition(easing=Easing.ease_out, duration=0.8),
+                ],
+                child=Padding(
+                    padding=EdgeInset.all(20),
+                    child=Flex(
+                        direction=FlexDirection.Column,
+                        align=Alignment.Stretch,
+                        gap=10,
+                        children=[
+                            Flex(
+                                direction=FlexDirection.Row,
+                                children=[
+                                    Expanded(),
+                                    Text(
+                                        font=Font(size=24, weight="bold"),
+                                        fill=ThemeColors.fg(),
+                                        text=lambda: f"{winner.name} won!",
+                                    ),
+                                    Expanded(),
+                                ],
+                            ),
+                            Expanded(),
+                            Button.build(
+                                title="Continue game",
+                                size="md",
+                                on_click=lambda *_: State.continue_game(),
+                            ),
+                            Button.build(
+                                title="Main Menu",
+                                size="md",
+                                on_click=lambda *_: State.set_scene("menu"),
+                            ),
+                        ],
+                    ),
+                ),
+            )
+        )
+
+
 class Game:
     @staticmethod
     def build() -> Entity:
@@ -640,7 +694,7 @@ class Game:
                             AvailableTiles.build(),
                             *[
                                 GamePlayer.build(p, y_sort_store)
-                                for p in State.game.players
+                                for p in State.shuffled_players()
                             ],
                             Scene(
                                 components=[
@@ -656,6 +710,13 @@ class Game:
                     current=lambda: State.game_paused,
                     entities={
                         True: PauseMenu.build,
+                        False: Scene,
+                    },
+                ),
+                EntitySwitch(
+                    current=lambda: State.game.winner is not None,
+                    entities={
+                        True: WinnerScreen.build,
                         False: Scene,
                     },
                 ),

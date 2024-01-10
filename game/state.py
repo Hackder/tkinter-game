@@ -55,6 +55,7 @@ class GameState:
     available_steps: int | None = None
     turn: int = 0
     current_action: Literal["throw_dice", "move"] = "throw_dice"
+    winner: PlayerState | None = None
 
     def create_players(self, n: int):
         chars = random.sample(Character.all(), k=2 * n)
@@ -89,7 +90,13 @@ class GameState:
         self.available_steps = n
         self.current_action = "move"
 
-    def player_moved(self):
+    def player_moved(self, p: PlayerState):
+        assert self.end_room is not None
+
+        if self.is_in_end_room(p.x, p.y):
+            self.winner = p
+            return
+
         self.next_turn()
 
     def current_action_text(self) -> str:
@@ -98,6 +105,24 @@ class GameState:
         if self.current_action == "move":
             return f"Move ({self.available_steps} steps available)"
         return "Unknown"
+
+    def is_in_end_room(self, x: int, y: int) -> bool:
+        if self.end_room is None:
+            return False
+
+        return (
+            self.end_room.x <= x < self.end_room.x + self.end_room.width
+            and self.end_room.y <= y < self.end_room.y + self.end_room.height
+        )
+
+    def is_in_start_room(self, x: int, y: int) -> bool:
+        if self.start_room is None:
+            return False
+
+        return (
+            self.start_room.x <= x < self.start_room.x + self.start_room.width
+            and self.start_room.y <= y < self.start_room.y + self.start_room.height
+        )
 
 
 class State:
@@ -210,9 +235,8 @@ class State:
 
         State.selected_player.x = x
         State.selected_player.y = y
+        State.game.player_moved(State.selected_player)
         State.selected_player = None
-
-        State.game.player_moved()
 
     _last_board: list[RoomState] | None = None
     _tile_position_array: list[list[bool]] | None = None
@@ -259,3 +283,28 @@ class State:
         return positions[y][x]
 
     metrics = False
+
+    _last_players: list[PlayerState] | None = None
+    _shuffled_players: list[PlayerState] | None = None
+
+    @staticmethod
+    def shuffled_players() -> list[PlayerState]:
+        if (
+            State._last_players == State.game.players
+            and State._shuffled_players is not None
+        ):
+            return State._shuffled_players
+
+        if State.game.players is None:
+            return []
+
+        State._shuffled_players = random.sample(
+            State.game.players, len(State.game.players)
+        )
+        State._last_players = State.game.players
+        return State._shuffled_players
+
+    @staticmethod
+    def continue_game():
+        State.log.info("Continue game")
+        State.game.winner = None
