@@ -137,6 +137,7 @@ class State:
             State.game = GameState()
             State.new_game_section = "choose_n_players"
             State.game_paused = False
+            State.shown_player = None
         State.scene = scene
 
     NewGameSection = Literal["choose_n_players", "view_characters", "view_board"]
