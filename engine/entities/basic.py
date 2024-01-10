@@ -83,7 +83,7 @@ class RectState:
         self.outline_width = outline_width
 
     def copy(self):
-        return copy.deepcopy(self)
+        return copy.copy(self)
 
     def __repr__(self):
         return f"RectState(size={self.size}, fill={self.fill}, outline={self.outline}, outline_width={self.outline_width})"
@@ -195,13 +195,7 @@ class TextState(EntityState):
         self.justify = justify
 
     def copy(self):
-        return TextState(
-            text=self._bound_text,
-            width=self.width,
-            fill=self.fill,
-            font=self.font.copy(),
-            justify=self.justify,
-        )
+        return copy.copy(self)
 
 
 class Text(Entity):
@@ -289,7 +283,7 @@ class SpriteState:
         self.size = size
 
     def copy(self):
-        return copy.deepcopy(self)
+        return copy.copy(self)
 
 
 class Sprite(Entity):
@@ -362,7 +356,7 @@ class AnimatedSpriteState(EntityState):
         self.frame_time = timer()
 
     def copy(self):
-        return copy.deepcopy(self)
+        return copy.copy(self)
 
 
 class AnimatedSprite(Entity):

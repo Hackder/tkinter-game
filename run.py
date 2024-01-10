@@ -61,6 +61,6 @@ if __name__ == "__main__":
     for i, idx in enumerate([1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12]):
         register_character(renderer.asset_manager, idx, i + 1)
 
-    renderer.asset_manager.start()
+    # renderer.asset_manager.start()
 
     renderer.start()

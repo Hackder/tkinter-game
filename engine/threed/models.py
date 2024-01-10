@@ -55,7 +55,7 @@ class Position3d(Transitionable):
         )
 
     def copy(self):
-        return copy.deepcopy(self)
+        return copy.copy(self)
 
     def dot(self, other: Position3d):
         return self.x * other.x + self.y * other.y + self.z * other.z
@@ -127,7 +127,7 @@ class Quaternion(Transitionable):
         return Quaternion(w=1, i=0, j=0, k=0)
 
     def copy(self):
-        return copy.deepcopy(self)
+        return copy.copy(self)
 
     def __eq__(self, other: Quaternion):
         return (

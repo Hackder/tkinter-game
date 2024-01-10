@@ -54,7 +54,7 @@ class PaddingState:
         self.padding = padding
 
     def copy(self):
-        return copy.deepcopy(self)
+        return copy.copy(self)
 
 
 class Padding(Entity):
@@ -290,7 +290,7 @@ class FlexState:
         self.gap = gap
 
     def copy(self):
-        return copy.deepcopy(self)
+        return copy.copy(self)
 
 
 class Flex(Entity):
@@ -432,7 +432,7 @@ class ExpandState:
         self.flex = flex
 
     def copy(self):
-        return copy.deepcopy(self)
+        return copy.copy(self)
 
 
 class Expanded(Entity):
@@ -532,7 +532,7 @@ class SizeBoxState:
         self.height = height
 
     def copy(self):
-        return copy.deepcopy(self)
+        return copy.copy(self)
 
 
 class SizeBox(Entity):
@@ -603,7 +603,7 @@ class LockMinBoxState:
         self.height = height
 
     def copy(self):
-        return copy.deepcopy(self)
+        return copy.copy(self)
 
 
 class LockMinBox(Entity):

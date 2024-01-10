@@ -121,12 +121,11 @@ class EntitySwitcher(Entity):
         self,
         *,
         tag: str | None = None,
-        position: Position = Position(x=0, y=0),
         current: int = 0,
         components: list[Component] = [],
         entities: list[Entity]
     ):
-        super().__init__(tag=tag, position=position, components=components)
+        super().__init__(tag=tag, components=components)
         self.state = EntitySwitcherState(current=current)
         self.last_curr = current
         self._state = self.state.copy()
