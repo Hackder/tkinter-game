@@ -93,7 +93,7 @@ class GameState:
     def player_moved(self, p: PlayerState):
         assert self.end_room is not None
 
-        if self.is_in_end_room(p.x, p.y):
+        if self.is_in_end_room(p.x, p.y) and p.human:
             self.winner = p
             return
 
