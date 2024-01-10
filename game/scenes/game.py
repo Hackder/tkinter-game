@@ -1,5 +1,6 @@
 from multiprocessing import Pool, Process
 import random
+from tkinter import Canvas
 from tkinter.font import Font
 from typing import Any
 from engine.animation.utils import Easing
@@ -38,12 +39,66 @@ from engine.entities.layout import (
     SizeBox,
     Stack,
 )
-from engine.models import Color, EdgeInset, FrameContext, Position, Size
+from engine.models import Color, Constraints, EdgeInset, FrameContext, Position, Size
 from engine.state import SimpleState
 from game.scenes.dice import GameDice
 from game.state import PlayerState, RoomState, State
 from game.theme_colors import ThemeColors
 from game.widgets.button import Button
+
+
+class GameRoomLines(Entity):
+    tag: str
+
+    def __init__(self, *, tag: str | None = None, room: RoomState):
+        super().__init__(tag=tag)
+        self.room = room
+        self.line_ids = []
+        self._size = Size(
+            width=self.room.width * State.game.scale,
+            height=self.room.height * State.game.scale,
+        )
+
+    def create(self, canvas: Canvas):
+        self.canvas = canvas
+        for _ in range(self.room.width + self.room.height - 2):
+            id = canvas.create_line(
+                0, 0, 0, 0, tags=[self.tag], fill=ThemeColors.bg().to_hex()
+            )
+            self.line_ids.append(id)
+
+    def destroy(self):
+        for id in self.line_ids:
+            self.canvas.delete(id)
+
+    def paint(self, ctx: FrameContext, position: Position):
+        pos = position
+
+        for i in range(self.room.width - 1):
+            x = pos.x + (i + 1) * State.game.scale
+            y = pos.y
+            self.canvas.tag_raise(self.line_ids[i])
+            self.canvas.coords(
+                self.line_ids[i], x, y, x, y + self.room.height * State.game.scale
+            )
+
+        for i in range(self.room.height - 1):
+            x = pos.x
+            y = pos.y + (i + 1) * State.game.scale
+            self.canvas.tag_raise(self.line_ids[self.room.width - 1 + i])
+            self.canvas.coords(
+                self.line_ids[self.room.width - 1 + i],
+                x,
+                y,
+                x + self.room.width * State.game.scale,
+                y,
+            )
+
+    def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
+        for c in self.components:
+            c.before_layout(self, ctx, None)
+
+        return self._size
 
 
 class GameRoom:
@@ -72,40 +127,41 @@ class GameRoom:
                         height=room.height * State.game.scale,
                     ),
                 ),
-                Scene(
-                    children=[
-                        *[
-                            PureRect(
-                                tag="draggable",
-                                position=Position(y=0, x=(i + 1) * State.game.scale),
-                                size=Size(
-                                    width=1, height=room.height * State.game.scale
-                                ),
-                                outline_width=0,
-                                fill=ThemeColors.bg(),
-                            )
-                            for i in range(room.width)
-                        ],
-                        *[
-                            Rect(
-                                tag="draggable",
-                                components=[
-                                    Translate(
-                                        position=Position(
-                                            x=0, y=(i + 1) * State.game.scale
-                                        )
-                                    )
-                                ],
-                                size=Size(
-                                    width=room.width * State.game.scale, height=1
-                                ),
-                                outline_width=0,
-                                fill=ThemeColors.bg(),
-                            )
-                            for i in range(room.height)
-                        ],
-                    ]
-                ),
+                GameRoomLines(room=room),
+                # Scene(
+                #     children=[
+                #         *[
+                #             PureRect(
+                #                 tag="draggable",
+                #                 position=Position(y=0, x=(i + 1) * State.game.scale),
+                #                 size=Size(
+                #                     width=1, height=room.height * State.game.scale
+                #                 ),
+                #                 outline_width=0,
+                #                 fill=ThemeColors.bg(),
+                #             )
+                #             for i in range(room.width)
+                #         ],
+                #         *[
+                #             Rect(
+                #                 tag="draggable",
+                #                 components=[
+                #                     Translate(
+                #                         position=Position(
+                #                             x=0, y=(i + 1) * State.game.scale
+                #                         )
+                #                     )
+                #                 ],
+                #                 size=Size(
+                #                     width=room.width * State.game.scale, height=1
+                #                 ),
+                #                 outline_width=0,
+                #                 fill=ThemeColors.bg(),
+                #             )
+                #             for i in range(room.height)
+                #         ],
+                #     ]
+                # ),
             ],
         )
 
