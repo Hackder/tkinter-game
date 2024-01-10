@@ -405,7 +405,7 @@ class YDepthSort(Component):
 class GamePlayer:
     @staticmethod
     def build(p: PlayerState, y_sort_store: list[tuple[Entity, float]]) -> Entity:
-        player_scale = 1.2
+        player_scale = 1
 
         return AnimatedSprite(
             asset_key=lambda: p.character.idle_asset_key,
@@ -459,7 +459,7 @@ class AvailableTiles:
                 ),
                 StartOnFill(
                     fill=ThemeColors.bg_secondary(),
-                    delay=distance * 0.07,
+                    delay=distance * 0.03,
                 ),
                 FillTransition(
                     duration=0.3,
@@ -494,7 +494,7 @@ class AvailableTiles:
             tiles.append(AvailableTiles.create_tile(x, y, dst))
             visited.add((x, y))
 
-            if dst == State.game.available_stemps:
+            if dst == State.game.available_steps:
                 continue
 
             for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
@@ -511,14 +511,12 @@ class AvailableTiles:
                 queue.append((nx, ny))
                 visited.add((nx, ny))
 
-        print(len(tiles))
-
         return tiles
 
     @staticmethod
     def build() -> Entity:
         return Reactive(
-            dependency=lambda: State.selected_player,
+            dependency=lambda: (State.selected_player, State.game.available_steps),
             builder=lambda: EntitySwitch(
                 current=lambda: State.selected_player is not None,
                 entities={
@@ -573,7 +571,7 @@ class Game:
                         ],
                     ),
                 ),
-                # GameDice.build(),
+                GameDice.build(),
                 GameUI.build(),
                 EntitySwitch(
                     current=lambda: State.game_paused,

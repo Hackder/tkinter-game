@@ -8,6 +8,7 @@ from engine.entities.layout import Viewport3d
 from engine.threed.entities.basic import Dice, Entity3d
 from engine.threed.models import Position3d, Size3d, Camera, Quaternion
 from engine.models import FrameContext
+from game.state import State
 
 
 class Throwable(Component3d):
@@ -26,6 +27,7 @@ class Throwable(Component3d):
         self.camera = None
         self.speed = initial_speed
         self.last_move = timer()
+        self.rolling = False
 
     def create(self, entity):
         self.entity = entity
@@ -120,9 +122,33 @@ class Throwable(Component3d):
             self.speed.y += dir.y * ctx.delta_time * state.size.width
 
             if self.speed.length() > 3:
+                self.rolling = True
                 entity.state.position = entity.state.position.add(
                     self.speed.mul(ctx.delta_time)
                 )
+            else:
+                self.speed = Position3d(0, 0, 0)
+                if self.rolling:
+                    State.game.available_steps = 6
+
+                    numbers = [2, 5, 4, 3, 1, 6]
+                    for i, dir in enumerate(
+                        [
+                            Position3d(1, 0, 0),
+                            Position3d(-1, 0, 0),
+                            Position3d(0, 1, 0),
+                            Position3d(0, -1, 0),
+                            Position3d(0, 0, 1),
+                            Position3d(0, 0, -1),
+                        ]
+                    ):
+                        if (
+                            dir.rotated(entity.state.rotation).dot(Position3d(0, 0, 1))
+                            > 0.6
+                        ):
+                            State.game.available_steps = numbers[i]
+
+                self.rolling = False
 
             deceleration = self.speed.mul(-1).max_by_length(
                 self.speed.normalized().mul(-200)
@@ -175,7 +201,7 @@ class GameDice:
             ),
             children=[
                 Dice(
-                    position=Position3d(x=-60, y=-60, z=0),
+                    position=Position3d(x=-60, y=0, z=0),
                     size=Size3d(width=10, height=10, depth=10),
                     rotation=Quaternion.from_axis_angle(
                         Position3d(0, 1, 1), -math.pi / 4

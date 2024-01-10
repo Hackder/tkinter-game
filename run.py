@@ -1,6 +1,7 @@
 import sys
 
 from cli import CliOptions
+from game.state import State
 
 
 if sys.version_info < (3, 12):
@@ -43,6 +44,7 @@ if __name__ == "__main__":
     options = CliOptions(sys.argv)
     logging.basicConfig(level=options.global_log_level)
     logging.getLogger("Engine").setLevel(options.log_level)
+    State.metrics = options.metrics
     if options.metrics:
         gc.set_debug(gc.DEBUG_STATS)
 
@@ -61,6 +63,6 @@ if __name__ == "__main__":
     for i, idx in enumerate([1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12]):
         register_character(renderer.asset_manager, idx, i + 1)
 
-    # renderer.asset_manager.start()
+    renderer.asset_manager.start()
 
     renderer.start()

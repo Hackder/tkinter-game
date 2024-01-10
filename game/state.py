@@ -50,7 +50,7 @@ class GameState:
     start_room: RoomState | None = None
     end_room: RoomState | None = None
     scale: float = 50
-    available_stemps: int = 6
+    available_steps: int = 6
     turn: int = 0
 
     def create_players(self, n: int):
@@ -196,3 +196,5 @@ class State:
             return False
 
         return positions[y][x]
+
+    metrics = False
