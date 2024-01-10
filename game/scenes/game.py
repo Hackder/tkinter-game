@@ -2,7 +2,7 @@ import random
 from tkinter.font import Font
 from typing import Any
 from engine.animation.utils import Easing
-from engine.entities.basic import AnimatedSprite, Entity, Rect, Text
+from engine.entities.basic import AnimatedSprite, Entity, PureRect, Rect, Text
 from engine.entities.components.base import (
     Bind,
     Component,
@@ -74,15 +74,9 @@ class GameRoom:
                 Scene(
                     children=[
                         *[
-                            Rect(
+                            PureRect(
                                 tag="draggable",
-                                components=[
-                                    Translate(
-                                        position=Position(
-                                            y=0, x=(i + 1) * State.game.scale
-                                        )
-                                    )
-                                ],
+                                position=Position(y=0, x=(i + 1) * State.game.scale),
                                 size=Size(
                                     width=1, height=room.height * State.game.scale
                                 ),

@@ -83,7 +83,7 @@ class RectState:
         self.outline_width = outline_width
 
     def copy(self):
-        return copy.deepcopy(self)
+        return copy.copy(self)
 
     def __repr__(self):
         return f"RectState(size={self.size}, fill={self.fill}, outline={self.outline}, outline_width={self.outline_width})"
@@ -173,6 +173,86 @@ class Rect(Entity):
             return constraints.fit_size(size)
 
         return constraints.fit_size(state.size)
+
+
+class PureRect(Entity):
+    state: RectState
+
+    def __init__(
+        self,
+        *,
+        tag: str | None = None,
+        size: Size | None = None,
+        fill: Color = Color.white(),
+        outline: Color = Color.black(),
+        outline_width: float = 1.0,
+        position: Position = Position.zero(),
+        components: list[Component] = [],
+        child: Entity | None = None,
+    ):
+        if len(components) > 0:
+            raise ValueError("PureRect cannot have components")
+        super().__init__(tag=tag, components=components)
+        self.state = RectState(
+            size=size, fill=fill, outline=outline, outline_width=outline_width
+        )
+        self._state = self.state.copy()
+        self.child = child
+        self.position = position
+
+    def create(self, canvas: Canvas):
+        self.canvas = canvas
+        tags = [self.tag] if self.tag is not None else []
+        self.id = canvas.create_rectangle(0, 0, 0, 0, tags=tags)
+
+        if self.child is not None:
+            self.child.create(canvas)
+
+    def destroy(self):
+        self.canvas.delete(self.id)
+        if self.child is not None:
+            self.child.destroy()
+
+    def paint(self, ctx: FrameContext, position: Position):
+        self.canvas.tag_raise(self.id)
+
+        self.canvas.coords(
+            self.id,
+            position.x + self.position.x,
+            position.y + self.position.y,
+            position.x + self.position.x + self._size.width,
+            position.y + self.position.y + self._size.height,
+        )
+        self.canvas.itemconfigure(
+            self.id,
+            fill=self._state.fill.to_hex(),
+            outline=self._state.outline.to_hex(),
+            width=self._state.outline_width,
+        )
+
+        if self.child is not None:
+            self.child.paint(ctx, position)
+
+    def layout(self, ctx: FrameContext, constraints: Constraints) -> Size:
+        if self.child is not None:
+            new_constraints = constraints.limit(self.state.size)
+            self.child._size = self.child.layout(
+                ctx,
+                new_constraints.force_max()
+                if self.state.size is not None
+                else constraints,
+            )
+            if self.state.size is not None:
+                size = Size(
+                    width=max(self.state.size.width, self.child._size.width),
+                    height=max(self.state.size.height, self.child._size.height),
+                )
+            else:
+                size = self.child._size.copy()
+
+            return constraints.fit_size(size)
+
+        return constraints.fit_size(self.state.size)
 
 
 class TextState(EntityState):
