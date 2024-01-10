@@ -1,8 +1,10 @@
 from __future__ import annotations
+import pickle
 from dataclasses import dataclass
 import random
 from typing import Literal
 from engine.models import Position
+from game.logger import logger
 
 from game.board_generator import BoardGenerator
 
@@ -50,8 +52,9 @@ class GameState:
     start_room: RoomState | None = None
     end_room: RoomState | None = None
     scale: float = 50
-    available_steps: int = 6
+    available_steps: int | None = None
     turn: int = 0
+    current_action: Literal["throw_dice", "move"] = "throw_dice"
 
     def create_players(self, n: int):
         chars = random.sample(Character.all(), k=2 * n)
@@ -76,17 +79,35 @@ class GameState:
 
     def next_turn(self):
         self.turn = (self.turn + 1) % len(list(self.humans()))
+        self.current_action = "throw_dice"
+        self.available_steps = None
 
     def current_player(self) -> PlayerState:
         return self.players[self.turn]
 
+    def dice_throw(self, n):
+        self.available_steps = n
+        self.current_action = "move"
+
+    def player_moved(self):
+        self.next_turn()
+
+    def current_action_text(self) -> str:
+        if self.current_action == "throw_dice":
+            return "Throw dice"
+        if self.current_action == "move":
+            return f"Move ({self.available_steps} steps available)"
+        return "Unknown"
+
 
 class State:
+    log = logger.getChild("State")
     Scene = Literal["menu", "new_game", "game", "view_board"]
     scene: str = "menu"
 
     @staticmethod
     def set_scene(scene: State.Scene):
+        State.log.info("Scene: %s", scene)
         if scene == "new_game":
             State.game = GameState()
             State.new_game_section = "choose_n_players"
@@ -98,12 +119,14 @@ class State:
 
     @staticmethod
     def set_new_game_section(section: State.NewGameSection):
+        State.log.info("New game section: %s", section)
         State.new_game_section = section
 
     shown_player: PlayerState | None = None
 
     @staticmethod
     def toggle_shown_player(p: PlayerState):
+        State.log.info("Toggle shown player: %s", p.name)
         if State.shown_player == p:
             State.shown_player = None
             return
@@ -115,7 +138,28 @@ class State:
 
     @staticmethod
     def save_game(path: str):
-        print(path)
+        State.log.info("Saving game: %s", path)
+        if path == "":
+            return
+
+        save = pickle.dumps(State.game)
+        with open(path, "wb") as f:
+            f.write(save)
+
+    @staticmethod
+    def load_save(path: str):
+        State.log.info("Loading save: %s", path)
+        if path == "":
+            return
+
+        try:
+            with open(path, "rb") as f:
+                save = f.read()
+            State.game = pickle.loads(save)
+            State.set_scene("game")
+        except Exception as e:
+            State.log.exception(e)
+            State.log.error("Failed to load save: %s", path)
 
     game_view_offset = Position.zero()
 
@@ -127,6 +171,7 @@ class State:
 
     @staticmethod
     def toggle_game_paused():
+        State.log.info("Toggle game paused")
         State.game_paused = not State.game_paused
 
     hovered_player: PlayerState | None = None
@@ -139,6 +184,14 @@ class State:
 
     @staticmethod
     def toggle_selected_player(p: PlayerState):
+        State.log.info("Toggle selected player: %s", p.name)
+        if State.game.current_action != "move":
+            State.selected_player = None
+            State.log.info("Not in move action, ignoring toggle_selected_player")
+            return
+
+        State.log.info("In move action, toggling selected player: %s", p.name)
+
         if State.selected_player == p:
             State.selected_player = None
         else:
@@ -146,12 +199,20 @@ class State:
 
     @staticmethod
     def move_selected_player_to(x: int, y: int):
+        State.log.info(
+            "Move selected player: %s to: (%s, %s)",
+            State.selected_player.name if State.selected_player is not None else "None",
+            x,
+            y,
+        )
         if State.selected_player is None:
             return
 
         State.selected_player.x = x
         State.selected_player.y = y
         State.selected_player = None
+
+        State.game.player_moved()
 
     _last_board: list[RoomState] | None = None
     _tile_position_array: list[list[bool]] | None = None

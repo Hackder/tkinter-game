@@ -1,5 +1,5 @@
 from typing import Callable
-from multiprocessing import Process
+from multiprocessing import Pool, Process
 
 from engine.entities.layout import (
     Padding,
@@ -23,14 +23,11 @@ class MenuEntry:
 
 class MainMenu:
     @staticmethod
-    def callback(path):
-        print("path", path)
-
-    @staticmethod
     def load_game(e, entity: Entity):
         from engine.dialogs import Dialogs
 
-        Process(target=Dialogs.open_file_dialog, args=(MainMenu.callback,)).start()
+        pool = Pool()
+        pool.apply_async(Dialogs.open_file_dialog, callback=State.load_save)
 
     @staticmethod
     def build():

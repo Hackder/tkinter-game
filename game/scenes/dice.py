@@ -146,7 +146,7 @@ class Throwable(Component3d):
                             dir.rotated(entity.state.rotation).dot(Position3d(0, 0, 1))
                             > 0.6
                         ):
-                            State.game.available_steps = numbers[i]
+                            State.game.dice_throw(numbers[i])
 
                 self.rolling = False
 

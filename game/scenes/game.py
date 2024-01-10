@@ -1,3 +1,4 @@
+from multiprocessing import Pool, Process
 import random
 from tkinter.font import Font
 from typing import Any
@@ -141,6 +142,13 @@ class GameRoomHalo:
 
 class PauseMenu:
     @staticmethod
+    def save_game():
+        from engine.dialogs import Dialogs
+
+        pool = Pool()
+        pool.apply_async(Dialogs.save_file_dialog, callback=State.save_game)
+
+    @staticmethod
     def build() -> Entity:
         return Rect(
             fill=ThemeColors.bg(),
@@ -181,7 +189,7 @@ class PauseMenu:
                                 Button.build(
                                     title="Save Game",
                                     size="md",
-                                    on_click=lambda *_: State.save_game("test"),
+                                    on_click=lambda *_: PauseMenu.save_game(),
                                 ),
                                 Button.build(
                                     title="Main Menu",
@@ -211,20 +219,35 @@ class GameUI:
                                 direction=FlexDirection.Row,
                                 children=[
                                     Expanded(),
-                                    Rect(
-                                        fill=ThemeColors.fg(),
-                                        outline_width=2,
-                                        components=[
-                                            Translate(position=Position(x=0, y=-10))
-                                        ],
-                                        child=Padding(
-                                            padding=EdgeInset(10, 20, 10, 20),
-                                            child=Text(
-                                                text=lambda: State.game.current_player().name,
-                                                font=Font(size=24, weight="bold"),
-                                                fill=ThemeColors.fg_inverse(),
+                                    Flex(
+                                        direction=FlexDirection.Column,
+                                        align=Alignment.Center,
+                                        children=[
+                                            Rect(
+                                                fill=ThemeColors.fg(),
+                                                outline_width=2,
+                                                components=[
+                                                    Translate(
+                                                        position=Position(x=0, y=-10)
+                                                    )
+                                                ],
+                                                child=Padding(
+                                                    padding=EdgeInset(10, 20, 10, 20),
+                                                    child=Text(
+                                                        text=lambda: State.game.current_player().name,
+                                                        font=Font(
+                                                            size=24, weight="bold"
+                                                        ),
+                                                        fill=ThemeColors.fg_inverse(),
+                                                    ),
+                                                ),
                                             ),
-                                        ),
+                                            Text(
+                                                text=lambda: State.game.current_action_text(),
+                                                fill=ThemeColors.fg(),
+                                                font=Font(size=16, weight="bold"),
+                                            ),
+                                        ],
                                     ),
                                     Expanded(),
                                 ],
@@ -235,7 +258,7 @@ class GameUI:
                                     Expanded(),
                                     Button.build(
                                         title="Pause",
-                                        size="sm",
+                                        size="md",
                                         on_click=lambda *_: State.toggle_game_paused(),
                                     ),
                                 ],

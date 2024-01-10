@@ -14,6 +14,7 @@ class CliOptions:
 
     def __init__(self, args: list[str]):
         self.log_level = "WARNING"
+        self.engine_log_level = "WARNING"
         self.global_log_level = "WARNING"
         self.metrics = False
         self.width = 800

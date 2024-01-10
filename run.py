@@ -43,7 +43,8 @@ def register_character(mgr: AssetManager, idx: int, i: int):
 if __name__ == "__main__":
     options = CliOptions(sys.argv)
     logging.basicConfig(level=options.global_log_level)
-    logging.getLogger("Engine").setLevel(options.log_level)
+    logging.getLogger("Engine").setLevel(options.engine_log_level)
+    logging.getLogger("Game").setLevel(options.log_level)
     State.metrics = options.metrics
     if options.metrics:
         gc.set_debug(gc.DEBUG_STATS)
