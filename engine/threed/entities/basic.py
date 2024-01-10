@@ -49,7 +49,7 @@ class CubeState:
         self.size = size
 
     def copy(self):
-        return copy.deepcopy(self)
+        return copy.copy(self)
 
 
 TransformFn = Callable[[float, float], tuple[float, float]]

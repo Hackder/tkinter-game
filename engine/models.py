@@ -38,7 +38,7 @@ class Size(Transitionable):
         self.height = height
 
     def copy(self):
-        return copy.deepcopy(self)
+        return copy.copy(self)
 
     def max(self, other: Size):
         return Size(
