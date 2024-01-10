@@ -136,7 +136,7 @@ class ViewPlayers:
     def build():
         global character
         return SizeBox(
-            width=450,
+            width=500,
             height=300,
             child=Flex(
                 direction=FlexDirection.Column,
@@ -150,7 +150,7 @@ class ViewPlayers:
                             gap=8,
                             children=[
                                 SizeBox(
-                                    width=160,
+                                    width=200,
                                     child=Flex(
                                         direction=FlexDirection.Column,
                                         gap=8,
