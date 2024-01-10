@@ -69,7 +69,7 @@ class GameState:
 
     def generate_board(self):
         generator = BoardGenerator(5, range(-25, 20))
-        board = generator.generate_board(9)
+        board = generator.generate_board(7)
 
         self.board = []
         for room in board:
